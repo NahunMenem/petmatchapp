@@ -94,8 +94,8 @@ final _routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-class PetMatchApp extends ConsumerWidget {
-  const PetMatchApp({super.key});
+class PawMatchApp extends ConsumerWidget {
+  const PawMatchApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -114,7 +114,7 @@ class PetMatchApp extends ConsumerWidget {
     });
 
     return MaterialApp.router(
-      title: 'PetMatch',
+      title: 'PawMatch',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: router,

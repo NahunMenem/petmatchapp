@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/utils/app_snack_bar.dart';
 import '../../core/utils/validators.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/brand_logo.dart';
@@ -58,8 +59,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       e.toString().contains('Connection')
                   ? 'Sin conexión al servidor'
                   : 'Error al crear la cuenta';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg), backgroundColor: Colors.red),
+          AppSnackBar.error(
+            context,
+            message: msg,
           );
         },
         loading: () {},
@@ -84,11 +86,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               children: [
                 const SizedBox(height: 24),
                 const Center(
-                  child: BrandLogo(width: 180, height: 90),
+                  child: BrandLogo(width: 230, height: 102),
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Bienvenido a\nPetMatch 🐾',
+                  'Bienvenido a\nPawMatch 🐾',
                   style: Theme.of(context).textTheme.headlineLarge,
                 ),
                 const SizedBox(height: 8),

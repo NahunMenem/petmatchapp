@@ -163,33 +163,8 @@ class PatitasFallback {
     ),
   ];
 
-  static final wallet = PatitasWallet(
-    patitas: 120,
-    transactions: [
-      PatitasTransaction(
-        id: 'fallback-starter',
-        type: 'compra',
-        amount: 100,
-        description: 'Pack Starter comprado',
-        status: 'approved',
-        date: DateTime(2026, 4, 22, 10, 30),
-      ),
-      PatitasTransaction(
-        id: 'fallback-lost',
-        type: 'uso',
-        amount: -20,
-        description: 'Notificacion perdidos 2km',
-        status: 'used',
-        date: DateTime(2026, 4, 21, 8, 15),
-      ),
-      PatitasTransaction(
-        id: 'fallback-boost',
-        type: 'uso',
-        amount: -25,
-        description: 'Boost de perfil activado',
-        status: 'used',
-        date: DateTime(2026, 4, 20, 16, 45),
-      ),
-    ],
+  static const wallet = PatitasWallet(
+    patitas: 0,
+    transactions: [],
   );
 }

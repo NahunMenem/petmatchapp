@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/pet_model.dart';
 import '../models/received_like_model.dart';
 import 'auth_provider.dart';
+import 'chat_provider.dart';
+import 'patitas_provider.dart';
 import '../services/pet_service.dart';
 
 final petServiceProvider = Provider<PetService>((ref) => PetService());
@@ -18,9 +20,12 @@ class ExploreLocation {
 
 final exploreLocationProvider = StateProvider<ExploreLocation?>((ref) => null);
 final exploreMaxDistanceProvider = StateProvider<int>((ref) => 10);
+final exploreTypeProvider = StateProvider<String?>((ref) => null);
 final exploreBreedProvider = StateProvider<String>((ref) => '');
+final exploreSexProvider = StateProvider<String?>((ref) => null);
 final exploreVaccinatedOnlyProvider = StateProvider<bool>((ref) => false);
 final exploreSterilizedOnlyProvider = StateProvider<bool>((ref) => false);
+final exploreHiddenPetIdsProvider = StateProvider<Set<String>>((ref) => <String>{});
 
 // My Pets
 final myPetsProvider = FutureProvider<List<PetModel>>((ref) async {
@@ -30,16 +35,20 @@ final myPetsProvider = FutureProvider<List<PetModel>>((ref) async {
 // Explore pets (swipe stack)
 class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
   int _page = 1;
-  String? _typeFilter;
-
   @override
   Future<List<PetModel>> build() async {
     ref.watch(authProvider.select((state) => state.valueOrNull?.user?.id));
     ref.watch(exploreLocationProvider);
     ref.watch(exploreMaxDistanceProvider);
+    ref.watch(exploreTypeProvider);
     ref.watch(exploreBreedProvider);
+    ref.watch(exploreSexProvider);
     ref.watch(exploreVaccinatedOnlyProvider);
     ref.watch(exploreSterilizedOnlyProvider);
+    ref.watch(
+      advancedFiltersProvider.select((state) => state.valueOrNull?.active ?? false),
+    );
+    ref.watch(exploreHiddenPetIdsProvider);
     _page = 1;
     return _fetch();
   }
@@ -48,19 +57,31 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
     final service = ref.read(petServiceProvider);
     final location = ref.read(exploreLocationProvider);
     final maxDistanceKm = ref.read(exploreMaxDistanceProvider);
+    final type = ref.read(exploreTypeProvider);
     final breed = ref.read(exploreBreedProvider);
+    final sex = ref.read(exploreSexProvider);
     final vaccinatedOnly = ref.read(exploreVaccinatedOnlyProvider);
     final sterilizedOnly = ref.read(exploreSterilizedOnlyProvider);
-    return service.getExplorePets(
-      type: _typeFilter,
+    final advancedFiltersActive =
+        ref.read(advancedFiltersProvider).valueOrNull?.active ?? false;
+    final effectiveMaxDistanceKm = advancedFiltersActive
+        ? maxDistanceKm.clamp(10, 50)
+        : 10;
+    final hiddenPetIds = ref.read(exploreHiddenPetIdsProvider);
+    final pets = await service.getExplorePets(
+      type: type,
       breed: breed,
+      sex: sex,
       vaccinatedOnly: vaccinatedOnly,
       sterilizedOnly: sterilizedOnly,
       lat: location?.latitude,
       lng: location?.longitude,
-      maxDistanceKm: maxDistanceKm,
+      maxDistanceKm: effectiveMaxDistanceKm,
       page: _page,
     );
+    return pets
+        .where((pet) => pet.isActive && !hiddenPetIds.contains(pet.id))
+        .toList();
   }
 
   Future<void> loadMore() async {
@@ -81,35 +102,47 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
     }
   }
 
+  void _hidePet(String petId) {
+    final hidden = {...ref.read(exploreHiddenPetIdsProvider)};
+    hidden.add(petId);
+    ref.read(exploreHiddenPetIdsProvider.notifier).state = hidden;
+  }
+
   Future<void> likeCurrentPet() async {
     final current = state.value;
     if (current == null || current.isEmpty) return;
     final pet = current[0];
+    _hidePet(pet.id);
     removeCurrent();
-    await ref.read(petServiceProvider).likePet(pet.id);
+    final result = await ref.read(petServiceProvider).likePet(pet.id);
+    if (result.isMatch) {
+      ref.read(matchPetProvider.notifier).state = pet;
+      ref.invalidate(conversationsProvider);
+    }
   }
 
   Future<void> superLikeCurrentPet() async {
     final current = state.value;
     if (current == null || current.isEmpty) return;
     final pet = current[0];
+    _hidePet(pet.id);
     removeCurrent();
-    await ref.read(petServiceProvider).superLikePet(pet.id);
+    final result = await ref.read(petServiceProvider).superLikePet(pet.id);
+    if (result.isMatch) {
+      ref.read(matchPetProvider.notifier).state = pet;
+      ref.invalidate(conversationsProvider);
+    }
   }
 
   Future<void> dislikeCurrentPet() async {
     final current = state.value;
     if (current == null || current.isEmpty) return;
     final pet = current[0];
+    _hidePet(pet.id);
     removeCurrent();
     await ref.read(petServiceProvider).dislikePet(pet.id);
   }
 
-  void setTypeFilter(String? type) {
-    _typeFilter = type;
-    _page = 1;
-    ref.invalidateSelf();
-  }
 }
 
 final exploreProvider = AsyncNotifierProvider<ExploreNotifier, List<PetModel>>(

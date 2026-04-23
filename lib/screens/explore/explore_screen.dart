@@ -4,12 +4,15 @@ import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/app_snack_bar.dart';
 import '../../models/pet_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/chat_provider.dart';
 import '../../providers/patitas_provider.dart';
 import '../../providers/pets_provider.dart';
 import '../../widgets/brand_logo.dart';
 import '../../widgets/pet_card.dart';
+import '../home/home_screen.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
   const ExploreScreen({super.key});
@@ -59,10 +62,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
         latitude: position.latitude,
         longitude: position.longitude,
       );
-      await ref.read(authServiceProvider).updateLocation(
+      final updatedUser = await ref.read(authServiceProvider).updateLocation(
             latitude: position.latitude,
             longitude: position.longitude,
           );
+      ref.read(authProvider.notifier).updateUser(updatedUser);
     } catch (_) {}
   }
 
@@ -71,18 +75,12 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     final wallet = ref.read(patitasWalletProvider).valueOrNull;
     if ((wallet?.patitas ?? 0) < cost) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              const Text('Necesitas 10 Patitas para enviar un Super Like.'),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          action: SnackBarAction(
-            label: 'Comprar',
-            textColor: Colors.white,
-            onPressed: () => context.push('/paw-points/buy'),
-          ),
-        ),
+      AppSnackBar.error(
+        context,
+        title: 'Patitas insuficientes',
+        message: 'Necesitas 10 Patitas para enviar un Super Like.',
+        actionLabel: 'Comprar',
+        onAction: () => context.push('/paw-points/buy'),
       );
       return;
     }
@@ -92,25 +90,18 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       ref.invalidate(patitasWalletProvider);
       ref.invalidate(receivedLikesProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Super Like enviado'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppSnackBar.success(
+        context,
+        title: 'Super Like',
+        message: 'Super Like enviado.',
       );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('No se pudo enviar el Super Like.'),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          action: SnackBarAction(
-            label: 'Comprar',
-            textColor: Colors.white,
-            onPressed: () => context.push('/paw-points/buy'),
-          ),
-        ),
+      AppSnackBar.error(
+        context,
+        message: 'No se pudo enviar el Super Like.',
+        actionLabel: 'Comprar',
+        onAction: () => context.push('/paw-points/buy'),
       );
     }
   }
@@ -126,7 +117,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
         title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            BrandLogo(width: 110, height: 30),
+            BrandLogo(width: 145, height: 40),
           ],
         ),
         actions: [
@@ -154,11 +145,12 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                 pets: pets,
                 controller: _swiperController,
                 onSuperLike: _sendSuperLike,
+                onDislike: () {
+                  ref.read(exploreProvider.notifier).dislikeCurrentPet();
+                },
                 onSwipe: (index, _, direction) {
                   if (direction == CardSwiperDirection.right) {
                     ref.read(exploreProvider.notifier).likeCurrentPet();
-                  } else if (direction == CardSwiperDirection.left) {
-                    ref.read(exploreProvider.notifier).dislikeCurrentPet();
                   }
                   return true;
                 },
@@ -175,7 +167,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               },
               onMessage: () {
                 ref.read(matchPetProvider.notifier).state = null;
-                context.go('/chat');
+                ref.read(selectedHomeTabProvider.notifier).state = 3;
+                ref.invalidate(conversationsProvider);
+                context.go('/home');
               },
             ),
         ],
@@ -198,12 +192,14 @@ class _SwipeView extends StatelessWidget {
   final CardSwiperController controller;
   final CardSwiperOnSwipe onSwipe;
   final VoidCallback onSuperLike;
+  final VoidCallback onDislike;
 
   const _SwipeView({
     required this.pets,
     required this.controller,
     required this.onSwipe,
     required this.onSuperLike,
+    required this.onDislike,
   });
 
   @override
@@ -218,6 +214,8 @@ class _SwipeView extends StatelessWidget {
               controller: controller,
               cardsCount: pets.length,
               onSwipe: onSwipe,
+              allowedSwipeDirection:
+                  const AllowedSwipeDirection.only(right: true),
               numberOfCardsDisplayed: pets.length == 1 ? 1 : 2,
               backCardOffset: const Offset(0, -16),
               padding: const EdgeInsets.only(top: 8, bottom: 8),
@@ -239,7 +237,7 @@ class _SwipeView extends StatelessWidget {
                 icon: Icons.close_rounded,
                 color: AppColors.dislikeRed,
                 size: 52,
-                onTap: () => controller.swipe(CardSwiperDirection.left),
+                onTap: onDislike,
               ),
               // Super like
               _ActionButton(
@@ -483,23 +481,14 @@ class _PremiumFilterSheet extends ConsumerWidget {
       next.whenOrNull(
         error: (error, _) {
           final insufficient = error.toString().contains('402');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                insufficient
-                    ? 'Necesitas Patitas para activar filtros avanzados.'
-                    : 'No se pudieron activar los filtros avanzados.',
-              ),
-              backgroundColor: AppColors.error,
-              behavior: SnackBarBehavior.floating,
-              action: insufficient
-                  ? SnackBarAction(
-                      label: 'Comprar',
-                      textColor: Colors.white,
-                      onPressed: () => context.push('/paw-points/buy'),
-                    )
-                  : null,
-            ),
+          AppSnackBar.error(
+            context,
+            message: insufficient
+                ? 'Necesitas Patitas para activar filtros avanzados.'
+                : 'No se pudieron activar los filtros avanzados.',
+            actionLabel: insufficient ? 'Comprar' : null,
+            onAction:
+                insufficient ? () => context.push('/paw-points/buy') : null,
           );
         },
       );
@@ -709,23 +698,55 @@ class _AdvancedFiltersSheet extends ConsumerStatefulWidget {
 }
 
 class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
-  late final TextEditingController _breedCtrl;
+  static const List<String> _dogBreeds = [
+    'Labrador Retriever',
+    'Golden Retriever',
+    'Caniche',
+    'Bulldog',
+    'Bulldog Frances',
+    'Beagle',
+    'Boxer',
+    'Chihuahua',
+    'Cocker Spaniel',
+    'Dachshund',
+    'Doberman',
+    'Husky Siberiano',
+    'Mestizo',
+    'Pastor Aleman',
+    'Pug',
+    'Rottweiler',
+    'Shih Tzu',
+    'Yorkshire Terrier',
+  ];
+  static const List<String> _catBreeds = [
+    'Siames',
+    'Persa',
+    'Maine Coon',
+    'Angora',
+    'Bengali',
+    'British Shorthair',
+    'Esfinge',
+    'Mestizo',
+    'Ragdoll',
+    'Siberiano',
+  ];
+
+  String? _selectedType;
+  String _selectedBreed = '';
+  String? _selectedSex;
 
   @override
   void initState() {
     super.initState();
-    _breedCtrl = TextEditingController(text: ref.read(exploreBreedProvider));
-  }
-
-  @override
-  void dispose() {
-    _breedCtrl.dispose();
-    super.dispose();
+    _selectedType = ref.read(exploreTypeProvider);
+    _selectedBreed = ref.read(exploreBreedProvider);
+    _selectedSex = ref.read(exploreSexProvider);
   }
 
   @override
   Widget build(BuildContext context) {
-    final radius = ref.watch(exploreMaxDistanceProvider);
+    final radius = ref.watch(exploreMaxDistanceProvider).clamp(10, 50);
+    final typeValue = _selectedType;
     final vaccinated = ref.watch(exploreVaccinatedOnlyProvider);
     final sterilized = ref.watch(exploreSterilizedOnlyProvider);
 
@@ -753,12 +774,86 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 18),
-          TextField(
-            controller: _breedCtrl,
+          DropdownButtonFormField<String?>(
+            initialValue: typeValue,
             decoration: const InputDecoration(
-              labelText: 'Raza especifica',
+              labelText: 'Tipo de mascota',
+              prefixIcon: Icon(Icons.pets_outlined),
+            ),
+            items: const [
+              DropdownMenuItem<String?>(
+                value: null,
+                child: Text('Todos'),
+              ),
+              DropdownMenuItem<String?>(
+                value: 'dog',
+                child: Text('Perros'),
+              ),
+              DropdownMenuItem<String?>(
+                value: 'cat',
+                child: Text('Gatos'),
+              ),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _selectedType = value;
+                final nextBreedOptions = _breedOptionsFor(value);
+                if (_selectedBreed.isNotEmpty &&
+                    !nextBreedOptions.contains(_selectedBreed)) {
+                  _selectedBreed = '';
+                }
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            initialValue: _selectedBreed.isEmpty ? '' : _selectedBreed,
+            decoration: const InputDecoration(
+              labelText: 'Raza',
               prefixIcon: Icon(Icons.biotech_outlined),
             ),
+            items: [
+              const DropdownMenuItem<String>(
+                value: '',
+                child: Text('Todas'),
+              ),
+              ..._breedOptionsFor(_selectedType).map(
+                (breed) => DropdownMenuItem<String>(
+                  value: breed,
+                  child: Text(breed),
+                ),
+              ),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _selectedBreed = value ?? '';
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String?>(
+            initialValue: _selectedSex,
+            decoration: const InputDecoration(
+              labelText: 'Sexo',
+              prefixIcon: Icon(Icons.wc_rounded),
+            ),
+            items: const [
+              DropdownMenuItem<String?>(
+                value: null,
+                child: Text('Todos'),
+              ),
+              DropdownMenuItem<String?>(
+                value: 'male',
+                child: Text('Macho'),
+              ),
+              DropdownMenuItem<String?>(
+                value: 'female',
+                child: Text('Hembra'),
+              ),
+            ],
+            onChanged: (value) {
+              setState(() => _selectedSex = value);
+            },
           ),
           const SizedBox(height: 16),
           Row(
@@ -774,10 +869,10 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
             ],
           ),
           Slider(
-            min: 1,
+            min: 10,
             max: 50,
-            divisions: 49,
-            value: radius.toDouble().clamp(1, 50),
+            divisions: 40,
+            value: radius.toDouble().clamp(10, 50),
             onChanged: (value) {
               ref.read(exploreMaxDistanceProvider.notifier).state =
                   value.round();
@@ -803,8 +898,10 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
             height: 52,
             child: ElevatedButton(
               onPressed: () {
+                ref.read(exploreTypeProvider.notifier).state = _selectedType;
                 ref.read(exploreBreedProvider.notifier).state =
-                    _breedCtrl.text.trim();
+                    _selectedBreed;
+                ref.read(exploreSexProvider.notifier).state = _selectedSex;
                 ref.invalidate(exploreProvider);
                 Navigator.pop(context);
               },
@@ -813,8 +910,14 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
           ),
           TextButton(
             onPressed: () {
-              _breedCtrl.clear();
+              setState(() {
+                _selectedType = null;
+                _selectedBreed = '';
+                _selectedSex = null;
+              });
+              ref.read(exploreTypeProvider.notifier).state = null;
               ref.read(exploreBreedProvider.notifier).state = '';
+              ref.read(exploreSexProvider.notifier).state = null;
               ref.read(exploreMaxDistanceProvider.notifier).state = 10;
               ref.read(exploreVaccinatedOnlyProvider.notifier).state = false;
               ref.read(exploreSterilizedOnlyProvider.notifier).state = false;
@@ -826,5 +929,15 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
         ],
       ),
     );
+  }
+
+  List<String> _breedOptionsFor(String? type) {
+    final options = switch (type) {
+      'dog' => _dogBreeds,
+      'cat' => _catBreeds,
+      _ => [..._dogBreeds, ..._catBreeds],
+    };
+    final unique = options.toSet().toList()..sort();
+    return unique;
   }
 }

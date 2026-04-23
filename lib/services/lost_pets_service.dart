@@ -55,6 +55,39 @@ class LostPetsService {
     return LostPetModel.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<LostPetModel> updateLostPet({
+    required String lostPetId,
+    String? petId,
+    required String name,
+    required String type,
+    required String description,
+    required String phone,
+    required List<String> photos,
+    required String location,
+    double? latitude,
+    double? longitude,
+    int? rewardAmount,
+    int? alertRadiusKm,
+  }) async {
+    final response = await _api.put(
+      '${ApiConstants.lostPets}/$lostPetId',
+      data: {
+        'pet_id': petId,
+        'name': name,
+        'type': type,
+        'description': description,
+        'phone': phone,
+        'photos': photos,
+        'location': location,
+        'latitude': latitude,
+        'longitude': longitude,
+        'reward_amount': rewardAmount,
+        'alert_radius_km': alertRadiusKm,
+      },
+    );
+    return LostPetModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
   Future<LostPetModel> updateStatus({
     required String lostPetId,
     required String status,

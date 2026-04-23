@@ -3,12 +3,30 @@ import '../models/pet_model.dart';
 import '../models/received_like_model.dart';
 import 'api_service.dart';
 
+class SwipeResult {
+  final bool isMatch;
+  final String? conversationId;
+
+  const SwipeResult({
+    required this.isMatch,
+    this.conversationId,
+  });
+
+  factory SwipeResult.fromJson(Map<String, dynamic> json) {
+    return SwipeResult(
+      isMatch: json['match'] as bool? ?? false,
+      conversationId: json['conversation_id'] as String?,
+    );
+  }
+}
+
 class PetService {
   final _api = ApiService();
 
   Future<List<PetModel>> getExplorePets({
     String? type,
     String? breed,
+    String? sex,
     bool vaccinatedOnly = false,
     bool sterilizedOnly = false,
     double? lat,
@@ -21,6 +39,7 @@ class PetService {
       queryParams: {
         if (type != null) 'type': type,
         if (breed != null && breed.trim().isNotEmpty) 'breed': breed.trim(),
+        if (sex != null && sex.trim().isNotEmpty) 'sex': sex.trim(),
         if (vaccinatedOnly) 'vaccinated': true,
         if (sterilizedOnly) 'sterilized': true,
         if (lat != null) 'lat': lat,
@@ -53,12 +72,21 @@ class PetService {
     return PetModel.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<void> likePet(String petId) async {
-    await _api.post(ApiConstants.like, data: {'pet_id': petId});
+  Future<void> deletePet(String id) async {
+    await _api.delete('${ApiConstants.pets}/$id');
   }
 
-  Future<void> superLikePet(String petId) async {
-    await _api.post(ApiConstants.superLike, data: {'pet_id': petId});
+  Future<SwipeResult> likePet(String petId) async {
+    final response = await _api.post(ApiConstants.like, data: {'pet_id': petId});
+    return SwipeResult.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<SwipeResult> superLikePet(String petId) async {
+    final response = await _api.post(
+      ApiConstants.superLike,
+      data: {'pet_id': petId},
+    );
+    return SwipeResult.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<void> dislikePet(String petId) async {

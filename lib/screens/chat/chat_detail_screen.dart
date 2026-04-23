@@ -23,12 +23,32 @@ class ChatDetailScreen extends ConsumerStatefulWidget {
 class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   final _msgCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
+  bool _markedAsRead = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _markConversationAsRead();
+    });
+  }
 
   @override
   void dispose() {
     _msgCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _markConversationAsRead() async {
+    if (_markedAsRead) return;
+    _markedAsRead = true;
+    try {
+      await ref.read(chatServiceProvider).markAsRead(widget.conversationId);
+      ref.invalidate(conversationsProvider);
+    } catch (_) {
+      _markedAsRead = false;
+    }
   }
 
   void _sendMessage() {
@@ -38,6 +58,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     ref
         .read(messagesProvider(widget.conversationId).notifier)
         .sendMessage(text);
+    ref.invalidate(conversationsProvider);
     _scrollToBottom();
   }
 
@@ -106,6 +127,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                   const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(child: Text('Error: $e')),
               data: (messages) {
+                _markConversationAsRead();
                 if (messages.isEmpty) {
                   return const Center(
                     child: Text(

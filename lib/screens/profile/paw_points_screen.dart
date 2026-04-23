@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/app_snack_bar.dart';
 import '../../models/patitas_model.dart';
 import '../../providers/patitas_provider.dart';
 
@@ -100,12 +101,11 @@ class _BuyPawPointsScreenState extends ConsumerState<BuyPawPointsScreen>
         _showSnack('No se pudo abrir Mercado Pago');
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'Cuando Mercado Pago apruebe el pago se acreditan las Patitas.'),
-            behavior: SnackBarBehavior.floating,
-          ),
+        AppSnackBar.info(
+          context,
+          title: 'Compra iniciada',
+          message:
+              'Cuando Mercado Pago apruebe el pago se acreditan las Patitas.',
         );
       }
     } catch (_) {
@@ -120,13 +120,7 @@ class _BuyPawPointsScreenState extends ConsumerState<BuyPawPointsScreen>
   }
 
   void _showSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    AppSnackBar.error(context, message: message);
   }
 
   @override
@@ -189,13 +183,14 @@ class _BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 204,
+      constraints: const BoxConstraints(minHeight: 160),
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
@@ -211,13 +206,17 @@ class _BalanceCard extends StatelessWidget {
             children: [
               const Icon(Icons.pets_outlined, color: Colors.white, size: 38),
               const SizedBox(width: 12),
-              Text(
-                '$points',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 48,
-                  height: 1,
-                  fontWeight: FontWeight.w900,
+              Flexible(
+                child: Text(
+                  '$points',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 48,
+                    height: 1,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
             ],
@@ -231,24 +230,32 @@ class _BalanceCard extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const Spacer(),
+          const SizedBox(height: 18),
           SizedBox(
+            width: double.infinity,
             height: 40,
-            child: FilledButton.icon(
-              onPressed: () => context.push('/paw-points/buy'),
-              icon: const Icon(Icons.add, size: 19),
-              label: const Text('Comprar patitas'),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  fontFamily: 'Nunito',
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: SizedBox(
+                height: 40,
+                child: FilledButton.icon(
+                  onPressed: () => context.push('/paw-points/buy'),
+                  icon: const Icon(Icons.add, size: 19),
+                  label: const Text('Comprar patitas'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: 'Nunito',
+                    ),
+                  ),
                 ),
               ),
             ),

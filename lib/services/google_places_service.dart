@@ -29,7 +29,7 @@ class GooglePlacesService {
 
   static const _apiKey = String.fromEnvironment(
     'GOOGLE_PLACES_API_KEY',
-    defaultValue: 'AIzaSyCBfnYLPF82KVB8V2vyOIXVjJqd63Ca5G0',
+    defaultValue: 'AIzaSyDVv_barlVwHJTgLF66dP4ESUffCBuS3uA',
   );
 
   final Dio _dio;
@@ -48,21 +48,24 @@ class GooglePlacesService {
           'key': _apiKey,
           'language': 'es',
           'components': 'country:ar',
-          'types': 'address',
+          'types': 'geocode',
+          'region': 'ar',
         },
       );
 
       final data = response.data ?? {};
       final status = data['status'] as String?;
-      if (status == 'ZERO_RESULTS') return const [];
+      if (status == 'ZERO_RESULTS') {
+        return _autocompleteFromGeocode(query);
+      }
       if (status != 'OK') {
         lastError = data['error_message'] as String? ?? status;
         debugPrint('Google Places autocomplete error: $lastError');
-        return const [];
+        return _autocompleteFromGeocode(query);
       }
 
       final predictions = data['predictions'] as List<dynamic>? ?? [];
-      return predictions
+      final suggestions = predictions
           .map((item) => item as Map<String, dynamic>)
           .map(
             (item) => PlaceSuggestion(
@@ -73,9 +76,51 @@ class GooglePlacesService {
           .where(
               (item) => item.description.isNotEmpty && item.placeId.isNotEmpty)
           .toList();
+      if (suggestions.isNotEmpty) return suggestions;
+      return _autocompleteFromGeocode(query);
     } catch (error) {
       lastError = error.toString();
       debugPrint('Google Places autocomplete exception: $error');
+      return _autocompleteFromGeocode(query);
+    }
+  }
+
+  Future<List<PlaceSuggestion>> _autocompleteFromGeocode(String query) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        'https://maps.googleapis.com/maps/api/geocode/json',
+        queryParameters: {
+          'address': query,
+          'key': _apiKey,
+          'language': 'es',
+          'components': 'country:AR',
+          'region': 'ar',
+        },
+      );
+
+      final data = response.data ?? {};
+      final status = data['status'] as String?;
+      if (status != 'OK' && status != 'ZERO_RESULTS') {
+        lastError = data['error_message'] as String? ?? status;
+        debugPrint('Google Geocoding fallback error: $lastError');
+      }
+
+      final results = data['results'] as List<dynamic>? ?? [];
+      return results
+          .take(5)
+          .map((item) => item as Map<String, dynamic>)
+          .map(
+            (item) => PlaceSuggestion(
+              description: item['formatted_address'] as String? ?? '',
+              placeId: item['place_id'] as String? ?? '',
+            ),
+          )
+          .where(
+            (item) => item.description.isNotEmpty && item.placeId.isNotEmpty,
+          )
+          .toList();
+    } catch (error) {
+      debugPrint('Google Geocoding fallback exception: $error');
       return const [];
     }
   }

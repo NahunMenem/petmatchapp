@@ -130,6 +130,26 @@ class AppTheme {
           borderRadius: BorderRadius.circular(20),
         ),
       ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.textPrimary,
+        elevation: 0,
+        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        contentTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          fontFamily: 'Nunito',
+          height: 1.3,
+        ),
+        actionTextColor: Colors.white,
+        disabledActionTextColor: Colors.white70,
+        showCloseIcon: true,
+        closeIconColor: Colors.white70,
+      ),
       textTheme: const TextTheme(
         displayLarge: TextStyle(
           fontSize: 32,

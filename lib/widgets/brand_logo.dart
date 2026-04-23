@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class BrandLogo extends StatelessWidget {
   static const String logoUrl =
-      'https://res.cloudinary.com/dcbdjnpzo/image/upload/v1776445799/petmachlogonegro2_jtctrr.png';
+      'https://res.cloudinary.com/dqsacd9ez/image/upload/v1776962386/PawMatch_upljxz.png';
 
   final double? width;
   final double? height;

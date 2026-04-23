@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../core/utils/app_snack_bar.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/pet_model.dart';
 import '../../models/adoption_model.dart';
@@ -183,6 +184,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               );
                               ref.invalidate(myPetsProvider);
                             },
+                            onDelete: () =>
+                                _confirmDeletePet(context, ref, pets[i]),
                           ),
                         ),
                 ),
@@ -228,9 +231,58 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     );
   }
+
+  Future<void> _confirmDeletePet(
+    BuildContext context,
+    WidgetRef ref,
+    PetModel pet,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Eliminar mascota'),
+        content: Text(
+          '¿Querés eliminar a ${pet.name}? También se van a cerrar sus matches y chats asociados.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await ref.read(petServiceProvider).deletePet(pet.id);
+      ref.invalidate(myPetsProvider);
+      ref.invalidate(exploreProvider);
+      ref.invalidate(conversationsProvider);
+      ref.invalidate(receivedLikesProvider);
+      if (!context.mounted) return;
+      AppSnackBar.success(
+        context,
+        title: 'Mascota eliminada',
+        message: '${pet.name} fue eliminada de tu perfil.',
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      AppSnackBar.error(
+        context,
+        message: 'No se pudo eliminar la mascota.',
+      );
+    }
+  }
 }
 
 class _PawPointsTile extends StatelessWidget {
+  static const double _tileHeight = 68;
   final int points;
   final VoidCallback onTap;
 
@@ -250,29 +302,29 @@ class _PawPointsTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           onTap: onTap,
           child: Container(
-            height: 72,
-            padding: const EdgeInsets.symmetric(horizontal: 28),
+            height: _tileHeight,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               children: [
                 const Icon(
                   Icons.pets_outlined,
                   color: AppColors.primary,
-                  size: 30,
+                  size: 26,
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: 16),
                 const Expanded(
                   child: Text(
                     'Mis Patitas',
                     style: TextStyle(
                       color: AppColors.primary,
-                      fontSize: 23,
+                      fontSize: 17,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
                 Container(
-                  height: 34,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  height: 32,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(18),
@@ -284,24 +336,24 @@ class _PawPointsTile extends StatelessWidget {
                         '$points',
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 17,
+                          fontSize: 13,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 4),
                       const Icon(
                         Icons.pets,
                         color: Colors.white,
-                        size: 15,
+                        size: 13,
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 18),
+                const SizedBox(width: 12),
                 const Icon(
                   Icons.chevron_right_rounded,
                   color: AppColors.primary,
-                  size: 30,
+                  size: 28,
                 ),
               ],
             ),
@@ -313,6 +365,7 @@ class _PawPointsTile extends StatelessWidget {
 }
 
 class _LikesTile extends StatelessWidget {
+  static const double _tileHeight = 68;
   final int likes;
   final VoidCallback onTap;
 
@@ -332,7 +385,7 @@ class _LikesTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           onTap: onTap,
           child: Container(
-            height: 68,
+            height: _tileHeight,
             padding: const EdgeInsets.symmetric(horizontal: 24),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
@@ -367,7 +420,7 @@ class _LikesTile extends StatelessWidget {
                 ),
                 Container(
                   height: 32,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(18),
@@ -377,7 +430,7 @@ class _LikesTile extends StatelessWidget {
                     '$likes likes',
                     style: const TextStyle(
                       color: AppColors.primary,
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -434,10 +487,12 @@ class _StatCard extends StatelessWidget {
 class _PetListTile extends StatelessWidget {
   final PetModel pet;
   final VoidCallback onTap;
+  final VoidCallback onDelete;
 
   const _PetListTile({
     required this.pet,
     required this.onTap,
+    required this.onDelete,
   });
 
   @override
@@ -463,22 +518,36 @@ class _PetListTile extends StatelessWidget {
         title:
             Text(pet.name, style: const TextStyle(fontWeight: FontWeight.w700)),
         subtitle: Text('${pet.breed} · ${pet.age}'),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: pet.isActive
-                ? AppColors.success.withValues(alpha: 0.12)
-                : AppColors.textHint.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            pet.isActive ? 'Buscando pareja' : 'Desactivada',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: pet.isActive ? AppColors.success : AppColors.textSecondary,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: pet.isActive
+                    ? AppColors.success.withValues(alpha: 0.12)
+                    : AppColors.textHint.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                pet.isActive ? 'Buscando pareja' : 'Desactivada',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color:
+                      pet.isActive ? AppColors.success : AppColors.textSecondary,
+                ),
+              ),
             ),
-          ),
+            IconButton(
+              tooltip: 'Eliminar mascota',
+              onPressed: onDelete,
+              icon: const Icon(
+                Icons.delete_outline_rounded,
+                color: AppColors.error,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -486,6 +555,7 @@ class _PetListTile extends StatelessWidget {
 }
 
 class _OptionTile extends StatelessWidget {
+  static const double _tileHeight = 68;
   final IconData icon;
   final String label;
   final Color? color;
@@ -509,7 +579,7 @@ class _OptionTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           onTap: onTap,
           child: Container(
-            height: 68,
+            height: _tileHeight,
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               children: [

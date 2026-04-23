@@ -51,7 +51,13 @@ class ChatListScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     itemCount: newMatches.length,
                     itemBuilder: (_, i) =>
-                        _MatchAvatar(conversation: newMatches[i]),
+                        _MatchAvatar(
+                          conversation: newMatches[i],
+                          onTap: () => context.push(
+                            '/chat/${newMatches[i].id}',
+                            extra: newMatches[i],
+                          ),
+                        ),
                   ),
                 ),
                 const Padding(
@@ -85,13 +91,17 @@ class ChatListScreen extends ConsumerWidget {
 
 class _MatchAvatar extends StatelessWidget {
   final ConversationModel conversation;
+  final VoidCallback onTap;
 
-  const _MatchAvatar({required this.conversation});
+  const _MatchAvatar({
+    required this.conversation,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6),
         child: Column(

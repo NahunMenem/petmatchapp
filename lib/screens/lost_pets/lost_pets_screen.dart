@@ -10,6 +10,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/app_snack_bar.dart';
 import '../../models/lost_pet_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/lost_pets_provider.dart';
@@ -104,36 +105,16 @@ class _LostPetsScreenState extends ConsumerState<LostPetsScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         titleSpacing: 20,
-        title: const BrandLogo(width: 132, height: 34),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 14),
-            child: FilledButton.icon(
-              onPressed: () => _showReportSheet(context),
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text('Reportar'),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                textStyle: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ),
-        ],
+        title: const BrandLogo(width: 156, height: 42),
       ),
       body: lostPetsAsync.when(
         loading: () => Column(
           children: [
-            _MapPlaceholder(pets: const [], currentLocation: _currentLocation),
+            _MapSection(
+              pets: const [],
+              currentLocation: _currentLocation,
+              onReport: () => _showReportSheet(context),
+            ),
             const Expanded(
               child: Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
@@ -143,7 +124,11 @@ class _LostPetsScreenState extends ConsumerState<LostPetsScreen> {
         ),
         error: (_, __) => Column(
           children: [
-            _MapPlaceholder(pets: const [], currentLocation: _currentLocation),
+            _MapSection(
+              pets: const [],
+              currentLocation: _currentLocation,
+              onReport: () => _showReportSheet(context),
+            ),
             Expanded(
               child: _LostPetsError(
                 onRetry: () => ref.invalidate(lostPetsProvider),
@@ -158,11 +143,12 @@ class _LostPetsScreenState extends ConsumerState<LostPetsScreen> {
 
           return Column(
             children: [
-              _MapPlaceholder(
+              _MapSection(
                 pets: lostPets,
                 currentLocation: _currentLocation,
+                nearbyCount: nearbyCount,
+                onReport: () => _showReportSheet(context),
               ),
-              if (nearbyCount > 0) _AlertBanner(count: nearbyCount),
               Expanded(
                 child: lostPets.isEmpty
                     ? const _EmptyLostPets()
@@ -180,6 +166,7 @@ class _LostPetsScreenState extends ConsumerState<LostPetsScreen> {
                             canMarkFound:
                                 lostPets[i].reporterId == currentUserId,
                             onMarkFound: () => _markLostPetFound(lostPets[i]),
+                            onEdit: () => _showEditSheet(context, lostPets[i]),
                           ),
                         ),
                       ),
@@ -199,6 +186,17 @@ class _LostPetsScreenState extends ConsumerState<LostPetsScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) => const _ReportSheet(),
+    );
+  }
+
+  void _showEditSheet(BuildContext context, LostPetModel pet) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _ReportSheet(existingPet: pet),
     );
   }
 
@@ -232,21 +230,16 @@ class _LostPetsScreenState extends ConsumerState<LostPetsScreen> {
       ref.invalidate(lostPetsProvider);
       ref.invalidate(myPetsProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${pet.name} se marco como encontrado'),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppSnackBar.success(
+        context,
+        title: 'Actualizado',
+        message: '${pet.name} se marco como encontrado.',
       );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se pudo actualizar la publicacion'),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
+      AppSnackBar.error(
+        context,
+        message: 'No se pudo actualizar la publicacion.',
       );
     }
   }
@@ -263,6 +256,84 @@ class _MapPlaceholder extends StatefulWidget {
 
   @override
   State<_MapPlaceholder> createState() => _MapPlaceholderState();
+}
+
+class _MapSection extends StatelessWidget {
+  final List<LostPetModel> pets;
+  final LatLng? currentLocation;
+  final int nearbyCount;
+  final VoidCallback onReport;
+
+  const _MapSection({
+    required this.pets,
+    required this.currentLocation,
+    required this.onReport,
+    this.nearbyCount = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.bottomCenter,
+          children: [
+            _MapPlaceholder(
+              pets: pets,
+              currentLocation: currentLocation,
+            ),
+            Positioned(
+              bottom: -24,
+              child: _ReportMapButton(onTap: onReport),
+            ),
+          ],
+        ),
+        const SizedBox(height: 34),
+        if (nearbyCount > 0) _AlertBanner(count: nearbyCount),
+      ],
+    );
+  }
+}
+
+class _ReportMapButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _ReportMapButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.28),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: FilledButton.icon(
+        onPressed: onTap,
+        icon: const Icon(Icons.add_rounded, size: 20),
+        label: const Text('Reportar mascota'),
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _MapPlaceholderState extends State<_MapPlaceholder> {
@@ -548,11 +619,13 @@ class _LostPetCard extends StatelessWidget {
   final LostPetModel pet;
   final bool canMarkFound;
   final VoidCallback onMarkFound;
+  final VoidCallback? onEdit;
 
   const _LostPetCard({
     required this.pet,
     required this.canMarkFound,
     required this.onMarkFound,
+    this.onEdit,
   });
 
   @override
@@ -706,6 +779,12 @@ class _LostPetCard extends StatelessWidget {
                           label: 'Lo encontre',
                           onTap: onMarkFound,
                         ),
+                      if (canMarkFound && onEdit != null)
+                        _ContactChip(
+                          icon: Icons.edit_outlined,
+                          label: 'Editar',
+                          onTap: onEdit!,
+                        ),
                     ],
                   ),
                   /*GestureDetector(
@@ -756,7 +835,7 @@ class _LostPetCard extends StatelessWidget {
 
   Future<void> _openWhatsApp(String phone, String petName) async {
     final message = Uri.encodeComponent(
-      'Hola, vi en PetMatch la alerta de $petName.',
+      'Hola, vi en PawMatch la alerta de $petName.',
     );
     final uri =
         Uri.parse('https://wa.me/${_normalizePhone(phone)}?text=$message');
@@ -812,7 +891,9 @@ class _ContactChip extends StatelessWidget {
 }
 
 class _ReportSheet extends ConsumerStatefulWidget {
-  const _ReportSheet();
+  final LostPetModel? existingPet;
+
+  const _ReportSheet({this.existingPet});
 
   @override
   ConsumerState<_ReportSheet> createState() => _ReportSheetState();
@@ -888,6 +969,14 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
   double? _latitude;
   double? _longitude;
 
+  bool get _isEditing => widget.existingPet != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _prefillFromExistingPet();
+  }
+
   @override
   void dispose() {
     _locationDebounce?.cancel();
@@ -897,6 +986,39 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
     _locationCtrl.dispose();
     _rewardCtrl.dispose();
     super.dispose();
+  }
+
+  void _prefillFromExistingPet() {
+    final existingPet = widget.existingPet;
+    if (existingPet == null) return;
+
+    _nameCtrl.text = existingPet.name;
+    _descCtrl.text = existingPet.description;
+    _locationCtrl.text = existingPet.location;
+    _rewardCtrl.text = existingPet.rewardAmount?.toString() ?? '';
+    _type = existingPet.type;
+    _selectedPetId = existingPet.petId;
+    _selectedPetPhotos = List<String>.from(existingPet.photos);
+    _hasReward = existingPet.rewardAmount != null;
+    _latitude = existingPet.latitude;
+    _longitude = existingPet.longitude;
+    _selectedReach = existingPet.alertRadiusKm == _alertReach2km.radiusKm
+        ? _alertReach2km
+        : existingPet.alertRadiusKm == _alertReach5km.radiusKm
+            ? _alertReach5km
+            : null;
+
+    final phone = existingPet.phone.trim();
+    final matchingCountry = _phoneCountries
+        .where((country) => phone.startsWith(country.dialCode))
+        .toList()
+      ..sort((a, b) => b.dialCode.length.compareTo(a.dialCode.length));
+    if (matchingCountry.isNotEmpty) {
+      _phoneCountry = matchingCountry.first;
+      _phoneCtrl.text = phone.substring(_phoneCountry.dialCode.length);
+    } else {
+      _phoneCtrl.text = phone;
+    }
   }
 
   Future<void> _pickPhotos() async {
@@ -1022,7 +1144,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
     });
   }
 
-  Future<void> _publishAlert() async {
+  Future<void> _submitAlert() async {
     if (_publishing) return;
 
     final name = _nameCtrl.text.trim();
@@ -1053,43 +1175,67 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
     try {
       final rewardAmount =
           _hasReward ? int.tryParse(_rewardCtrl.text.trim()) : null;
+      if ((_latitude == null || _longitude == null) && location.isNotEmpty) {
+        final details = await _placesService.forwardGeocode(location);
+        if (details != null) {
+          _latitude = details.latitude;
+          _longitude = details.longitude;
+        }
+      }
+
       final photoUrls = <String>[..._selectedPetPhotos];
       final petService = ref.read(petServiceProvider);
       for (final photo in _photos) {
         photoUrls.add(await petService.uploadPhoto(photo.path));
       }
 
-      await ref.read(lostPetsServiceProvider).createLostPet(
-            petId: _selectedPetId,
-            name: name,
-            type: _type,
-            description: description,
-            phone: phone,
-            photos: photoUrls,
-            location: location,
-            latitude: _latitude,
-            longitude: _longitude,
-            rewardAmount: rewardAmount,
-            alertRadiusKm: selectedReach?.radiusKm,
-          );
+      if (_isEditing) {
+        await ref.read(lostPetsServiceProvider).updateLostPet(
+              lostPetId: widget.existingPet!.id,
+              petId: _selectedPetId,
+              name: name,
+              type: _type,
+              description: description,
+              phone: phone,
+              photos: photoUrls,
+              location: location,
+              latitude: _latitude,
+              longitude: _longitude,
+              rewardAmount: rewardAmount,
+              alertRadiusKm:
+                  widget.existingPet?.alertRadiusKm ?? selectedReach?.radiusKm,
+            );
+      } else {
+        await ref.read(lostPetsServiceProvider).createLostPet(
+              petId: _selectedPetId,
+              name: name,
+              type: _type,
+              description: description,
+              phone: phone,
+              photos: photoUrls,
+              location: location,
+              latitude: _latitude,
+              longitude: _longitude,
+              rewardAmount: rewardAmount,
+              alertRadiusKm: selectedReach?.radiusKm,
+            );
+      }
 
       ref.invalidate(lostPetsProvider);
-      if (selectedReach != null) {
+      if (!_isEditing && selectedReach != null) {
         await ref.read(patitasWalletProvider.notifier).refresh();
       }
 
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            selectedReach == null
+      AppSnackBar.success(
+        context,
+        title: _isEditing ? 'Alerta actualizada' : 'Alerta publicada',
+        message: _isEditing
+            ? 'Alerta actualizada.'
+            : selectedReach == null
                 ? 'Alerta publicada.'
                 : 'Alerta publicada y ${selectedReach.title.toLowerCase()} activada.',
-          ),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-        ),
       );
     } catch (_) {
       if (!mounted) return;
@@ -1123,19 +1269,11 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
     VoidCallback? onAction,
   }) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        action: actionLabel != null && onAction != null
-            ? SnackBarAction(
-                label: actionLabel,
-                textColor: Colors.white,
-                onPressed: onAction,
-              )
-            : null,
-      ),
+    AppSnackBar.error(
+      context,
+      message: message,
+      actionLabel: actionLabel,
+      onAction: onAction,
     );
   }
 
@@ -1156,10 +1294,10 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      children: [
             Row(
               children: [
-                Text('Reportar mascota perdida',
+                Text(_isEditing ? 'Editar alerta' : 'Reportar mascota perdida',
                     style: Theme.of(context).textTheme.titleLarge),
                 const Spacer(),
                 IconButton(
@@ -1465,21 +1603,38 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
               ),
             ],
             const SizedBox(height: 16),
-            _AlertReachSection(
-              availablePatitas: availablePatitas,
-              selectedReach: _selectedReach,
-              onSelected: (reach) {
-                setState(() {
-                  _selectedReach = _selectedReach == reach ? null : reach;
-                });
-              },
-            ),
+            if (_isEditing && widget.existingPet?.alertRadiusKm != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  'Alcance de alerta actual: ${widget.existingPet!.alertRadiusKm} km',
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              )
+            else
+              _AlertReachSection(
+                availablePatitas: availablePatitas,
+                selectedReach: _selectedReach,
+                onSelected: (reach) {
+                  setState(() {
+                    _selectedReach = _selectedReach == reach ? null : reach;
+                  });
+                },
+              ),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               height: 52,
               child: ElevatedButton.icon(
-                onPressed: _publishing ? null : _publishAlert,
+                onPressed: _publishing ? null : _submitAlert,
                 icon: _publishing
                     ? const SizedBox(
                         width: 18,
@@ -1490,7 +1645,11 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                         ),
                       )
                     : const Icon(Icons.send_rounded),
-                label: Text(_publishing ? 'Publicando...' : 'Publicar alerta'),
+                label: Text(
+                  _publishing
+                      ? (_isEditing ? 'Guardando...' : 'Publicando...')
+                      : (_isEditing ? 'Guardar cambios' : 'Publicar alerta'),
+                ),
               ),
             ),
           ],
@@ -1789,7 +1948,7 @@ class _AlertReachSection extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Opcional. Se descuenta solo al publicar la alerta.',
+            'Opcional. Sin Patitas la alerta se publica igual, pero no se envian notificaciones por cercania.',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
@@ -1903,17 +2062,27 @@ void _showAlertReachInfo(BuildContext context) {
           const _InfoRow(
             title: 'Notificar a 2 km',
             text:
-                'PetMatch avisa a usuarios de la comunidad que esten cerca del lugar donde se perdio.',
+                'PawMatch avisa a usuarios de la comunidad que esten cerca del lugar donde se perdio, dentro de un radio de hasta 2 km.',
           ),
           const SizedBox(height: 12),
           const _InfoRow(
             title: 'Notificar a 5 km',
             text:
-                'Amplia el alcance para que mas personas cercanas vean la alerta y puedan ayudarte.',
+                'Amplia el alcance para que mas personas cercanas vean la alerta y puedan ayudarte dentro de un radio de hasta 5 km.',
           ),
           const SizedBox(height: 12),
           const Text(
-            'Las Patitas se descuentan solo cuando publicas la alerta.',
+            'Si no activas una opcion con Patitas, la alerta se publica normalmente en Perdidos pero no se envian notificaciones a usuarios cercanos.',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Las Patitas se descuentan solo cuando publicas la alerta con alcance de 2 km o 5 km.',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 13,

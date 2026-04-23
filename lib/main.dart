@@ -22,7 +22,7 @@ void main() async {
 
   runApp(
     const ProviderScope(
-      child: PetMatchApp(),
+      child: PawMatchApp(),
     ),
   );
 }

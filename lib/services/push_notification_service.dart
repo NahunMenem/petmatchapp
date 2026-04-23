@@ -47,6 +47,20 @@ class PushNotificationService {
     FirebaseMessaging.onMessage.listen(_showForegroundNotification);
   }
 
+  Future<bool> areNotificationsEnabled() async {
+    final ready = await ensureFirebaseReady();
+    if (!ready) return false;
+
+    final settings = await _messaging.getNotificationSettings();
+    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+  }
+
+  Future<bool> requestPermissionAndRegister() async {
+    await registerDeviceForUser(requestPermission: true);
+    return areNotificationsEnabled();
+  }
+
   Future<void> registerDeviceForUser({bool requestPermission = false}) async {
     final ready = await ensureFirebaseReady();
     if (!ready) return;
@@ -113,8 +127,8 @@ class PushNotificationService {
 
     const channel = fln.AndroidNotificationChannel(
       'petmatch_default',
-      'PetMatch',
-      description: 'Notificaciones de PetMatch',
+      'PawMatch',
+      description: 'Notificaciones de PawMatch',
       importance: fln.Importance.high,
     );
 
@@ -139,8 +153,8 @@ class PushNotificationService {
     const details = fln.NotificationDetails(
       android: fln.AndroidNotificationDetails(
         'petmatch_default',
-        'PetMatch',
-        channelDescription: 'Notificaciones de PetMatch',
+        'PawMatch',
+        channelDescription: 'Notificaciones de PawMatch',
         importance: fln.Importance.high,
         priority: fln.Priority.high,
       ),

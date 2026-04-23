@@ -5,13 +5,14 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/app_snack_bar.dart';
 import '../../models/adoption_model.dart';
 import '../../providers/adoption_provider.dart';
 import '../../providers/auth_provider.dart';
 
 class AdoptionScreen extends ConsumerStatefulWidget {
   static const String _adoptionLogoUrl =
-      'https://res.cloudinary.com/dqsacd9ez/image/upload/v1776700775/petmachlogonegro2_ibcquq.png';
+      'https://res.cloudinary.com/dqsacd9ez/image/upload/v1776962386/PawMatch_upljxz.png';
 
   const AdoptionScreen({super.key});
 
@@ -70,7 +71,7 @@ class _AdoptionScreenState extends ConsumerState<AdoptionScreen> {
           padding: EdgeInsets.only(left: 16),
           child: Image(
             image: NetworkImage(AdoptionScreen._adoptionLogoUrl),
-            height: 34,
+            height: 42,
             fit: BoxFit.contain,
           ),
         ),
@@ -574,13 +575,11 @@ class _AdoptionCard extends ConsumerWidget {
                                   .read(adoptionServiceProvider)
                                   .contactForAdoption(adoption.id);
                               if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Conversacion iniciada con el publicador',
-                                  ),
-                                  backgroundColor: AppColors.success,
-                                ),
+                              AppSnackBar.success(
+                                context,
+                                title: 'Chat iniciado',
+                                message:
+                                    'Conversacion iniciada con el publicador.',
                               );
                               context.go('/chat');
                             },
@@ -655,7 +654,7 @@ class _AdoptionCard extends ConsumerWidget {
 
   Future<void> _openWhatsApp(AdoptionModel adoption) async {
     final message = Uri.encodeComponent(
-      'Hola, vi en PetMatch la publicacion de ${adoption.name} en adopcion.',
+      'Hola, vi en PawMatch la publicacion de ${adoption.name} en adopcion.',
     );
     final uri = Uri.parse(
       'https://wa.me/${_normalizePhone(adoption.phone)}?text=$message',
@@ -886,11 +885,14 @@ class _AdoptionPhotoGalleryState extends State<_AdoptionPhotoGallery> {
 
   void _openViewer(
       BuildContext context, List<String> photos, int initialIndex) {
+    final safeInitialIndex = photos.isEmpty
+        ? 0
+        : initialIndex.clamp(0, photos.length - 1);
     showDialog(
       context: context,
       barrierColor: Colors.black,
       builder: (_) =>
-          _PhotoViewerModal(photos: photos, initialIndex: initialIndex),
+          _PhotoViewerModal(photos: photos, initialIndex: safeInitialIndex),
     );
   }
 
@@ -1066,11 +1068,16 @@ class _PhotoViewerModalState extends State<_PhotoViewerModal> {
   late final PageController _controller;
   late int _current;
 
+  int get _safeInitialIndex {
+    if (widget.photos.isEmpty) return 0;
+    return widget.initialIndex.clamp(0, widget.photos.length - 1);
+  }
+
   @override
   void initState() {
     super.initState();
-    _current = widget.initialIndex;
-    _controller = PageController(initialPage: widget.initialIndex);
+    _current = _safeInitialIndex;
+    _controller = PageController(initialPage: _safeInitialIndex);
   }
 
   @override

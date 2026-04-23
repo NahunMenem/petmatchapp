@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/app_snack_bar.dart';
 import '../../providers/adoption_provider.dart';
 import '../../providers/pets_provider.dart';
 import '../../services/google_places_service.dart';
@@ -229,11 +230,10 @@ class _PublishAdoptionScreenState extends ConsumerState<PublishAdoptionScreen> {
 
       if (mounted) {
         ref.invalidate(adoptionsProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Publicación creada exitosamente!'),
-            backgroundColor: AppColors.success,
-          ),
+        AppSnackBar.success(
+          context,
+          title: 'Adopcion publicada',
+          message: 'Publicacion creada exitosamente.',
         );
         context.pop();
       }
@@ -267,13 +267,7 @@ class _PublishAdoptionScreenState extends ConsumerState<PublishAdoptionScreen> {
   }
 
   void _showSnack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    AppSnackBar.error(context, message: msg);
   }
 
   @override

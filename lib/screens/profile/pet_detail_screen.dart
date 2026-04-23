@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/app_snack_bar.dart';
 import '../../models/pet_model.dart';
 import '../../providers/pets_provider.dart';
 
@@ -110,13 +111,11 @@ class _PetDetailScreenState extends ConsumerState<PetDetailScreen> {
   }
 
   void _showSnack(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? AppColors.error : AppColors.success,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    if (isError) {
+      AppSnackBar.error(context, message: message);
+      return;
+    }
+    AppSnackBar.success(context, message: message);
   }
 
   @override
