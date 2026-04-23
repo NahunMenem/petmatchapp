@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'core/theme/app_theme.dart';
 import 'models/message_model.dart';
 import 'providers/auth_provider.dart';
+import 'providers/pets_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/onboarding/create_pet_screen.dart';
@@ -104,12 +105,11 @@ class PetMatchApp extends ConsumerWidget {
       final status = next.valueOrNull?.status;
       if (status == AuthStatus.authenticated &&
           previousStatus != AuthStatus.authenticated) {
+        ref.invalidate(myPetsProvider);
+        ref.invalidate(exploreProvider);
+        ref.invalidate(receivedLikesProvider);
         PushNotificationService.instance.start();
         PushNotificationService.instance.registerDeviceForUser();
-      }
-      if (status == AuthStatus.unauthenticated &&
-          previousStatus == AuthStatus.authenticated) {
-        PushNotificationService.instance.unregisterDevice();
       }
     });
 

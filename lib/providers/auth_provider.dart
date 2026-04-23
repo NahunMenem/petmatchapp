@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/push_notification_service.dart';
 import '../services/storage_service.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
@@ -102,6 +103,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
 
   Future<void> logout() async {
     final service = ref.read(authServiceProvider);
+    await PushNotificationService.instance.unregisterDevice();
     await service.logout();
     state = const AsyncValue.data(
       AuthState(status: AuthStatus.unauthenticated),

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/pet_model.dart';
 import '../models/received_like_model.dart';
+import 'auth_provider.dart';
 import '../services/pet_service.dart';
 
 final petServiceProvider = Provider<PetService>((ref) => PetService());
@@ -33,11 +34,13 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
 
   @override
   Future<List<PetModel>> build() async {
+    ref.watch(authProvider.select((state) => state.valueOrNull?.user?.id));
     ref.watch(exploreLocationProvider);
     ref.watch(exploreMaxDistanceProvider);
     ref.watch(exploreBreedProvider);
     ref.watch(exploreVaccinatedOnlyProvider);
     ref.watch(exploreSterilizedOnlyProvider);
+    _page = 1;
     return _fetch();
   }
 
@@ -63,6 +66,10 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
   Future<void> loadMore() async {
     _page++;
     final more = await _fetch();
+    if (more.isEmpty) {
+      _page--;
+      return;
+    }
     state = AsyncValue.data([...state.value ?? [], ...more]);
   }
 
