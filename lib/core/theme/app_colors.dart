@@ -10,7 +10,7 @@ class AppColors {
   static const Color secondaryLight = Color(0xFFFF6B8A);
 
   // Backgrounds
-  static const Color background = Color(0xFFFAF8F5);
+  static const Color background = Color(0xFFF1F1F3);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color surfaceVariant = Color(0xFFF5F0EB);
 

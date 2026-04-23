@@ -15,7 +15,7 @@ class AppTheme {
       scaffoldBackgroundColor: AppColors.background,
       fontFamily: 'Nunito',
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.background,
         elevation: 0,
         scrolledUnderElevation: 1,
         centerTitle: true,
