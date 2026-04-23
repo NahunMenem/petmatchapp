@@ -500,16 +500,23 @@ class _PackCard extends StatelessWidget {
               Icon(Icons.pets_outlined, color: accent, size: 17),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  pack.bonusPatitas > 0
-                      ? '${pack.totalPatitas} Patitas (+${pack.bonusPatitas} bonus)'
-                      : '${pack.totalPatitas} Patitas',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: foreground,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      pack.bonusPatitas > 0
+                          ? '${pack.totalPatitas} Patitas (+${pack.bonusPatitas} bonus)'
+                          : '${pack.totalPatitas} Patitas',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: foreground,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ),
               ),
