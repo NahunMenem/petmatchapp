@@ -111,7 +111,7 @@ class AppTheme {
           fontFamily: 'Nunito',
         ),
       ),
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         color: AppColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -120,7 +120,7 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceVariant,
-        selectedColor: AppColors.primary.withValues(alpha: 0.15),
+        selectedColor: AppColors.primary.withOpacity(0.15),
         labelStyle: const TextStyle(
           fontFamily: 'Nunito',
           fontSize: 13,

@@ -78,7 +78,7 @@ class _PetCardState extends State<PetCard> {
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
@@ -107,7 +107,7 @@ class _PetCardState extends State<PetCard> {
                 Text(
                   '${pet.breed} · ${pet.age}',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: Colors.white.withOpacity(0.9),
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -126,7 +126,7 @@ class _PetCardState extends State<PetCard> {
                       Text(
                         '$distanceLabel de vos',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.92),
+                          color: Colors.white.withOpacity(0.92),
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
                         ),
@@ -164,7 +164,7 @@ class _PetCardState extends State<PetCard> {
                       decoration: BoxDecoration(
                         color: entry.key == _currentPhoto
                             ? Colors.white
-                            : Colors.white.withValues(alpha: 0.4),
+                            : Colors.white.withOpacity(0.4),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -247,7 +247,7 @@ class _PhotoHint extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.18),
+        color: Colors.black.withOpacity(0.18),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
@@ -277,10 +277,10 @@ class _Badge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.4),
+          color: Colors.white.withOpacity(0.4),
           width: 1,
         ),
       ),

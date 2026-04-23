@@ -110,7 +110,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         Text(
                           user!.location!,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color: Colors.white.withOpacity(0.8),
                             fontSize: 13,
                           ),
                         ),
@@ -394,7 +394,7 @@ class _LikesTile extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.25),
+                color: AppColors.primary.withOpacity(0.25),
               ),
             ),
             child: Row(
@@ -403,7 +403,7 @@ class _LikesTile extends StatelessWidget {
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(
@@ -426,7 +426,7 @@ class _LikesTile extends StatelessWidget {
                   height: 32,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   alignment: Alignment.center,
@@ -507,7 +507,7 @@ class _PetListTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
           color: pet.isActive
-              ? AppColors.success.withValues(alpha: 0.45)
+              ? AppColors.success.withOpacity(0.45)
               : Colors.transparent,
           width: 1.6,
         ),
@@ -562,7 +562,7 @@ class _PetListTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.12),
+                  color: AppColors.success.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: const Text(
@@ -605,8 +605,8 @@ class _PetListTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: pet.isActive
-                    ? AppColors.success.withValues(alpha: 0.12)
-                    : AppColors.textHint.withValues(alpha: 0.15),
+                    ? AppColors.success.withOpacity(0.12)
+                    : AppColors.textHint.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -668,7 +668,7 @@ class _OptionTile extends StatelessWidget {
                     width: 46,
                     height: 46,
                     decoration: BoxDecoration(
-                      color: (color ?? AppColors.primary).withValues(alpha: 0.1),
+                      color: (color ?? AppColors.primary).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(icon, color: color ?? AppColors.primary),

@@ -55,7 +55,7 @@ class ReferralsScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.22),
+                    color: AppColors.primary.withOpacity(0.22),
                     blurRadius: 24,
                     offset: const Offset(0, 14),
                   ),
@@ -85,7 +85,7 @@ class ReferralsScreen extends ConsumerWidget {
                   Text(
                     'Compartí tu código y cuando se registren con él, ambos reciben 10 Patitas.',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: Colors.white.withOpacity(0.9),
                       fontSize: 14,
                       height: 1.4,
                     ),
@@ -97,10 +97,10 @@ class ReferralsScreen extends ConsumerWidget {
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.14),
+                      color: Colors.white.withOpacity(0.14),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.22),
+                        color: Colors.white.withOpacity(0.22),
                       ),
                     ),
                     child: Row(
@@ -112,7 +112,7 @@ class ReferralsScreen extends ConsumerWidget {
                               Text(
                                 'Tu código',
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.82),
+                                  color: Colors.white.withOpacity(0.82),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -221,7 +221,7 @@ class ReferralsScreen extends ConsumerWidget {
             height: 26,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Text(

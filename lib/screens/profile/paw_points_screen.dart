@@ -409,7 +409,7 @@ class _PackCard extends StatelessWidget {
         ? Colors.white
         : isDark
             ? AppColors.primary
-            : AppColors.surfaceVariant.withValues(alpha: 0.75);
+            : AppColors.surfaceVariant.withOpacity(0.75);
     final buttonForeground = isHighlighted
         ? AppColors.primary
         : isDark
@@ -437,7 +437,7 @@ class _PackCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.18),
+                color: Colors.white.withOpacity(0.18),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
@@ -538,9 +538,9 @@ class _PackCard extends StatelessWidget {
                     backgroundColor: buttonBackground,
                     foregroundColor: buttonForeground,
                     disabledBackgroundColor:
-                        buttonBackground.withValues(alpha: 0.7),
+                        buttonBackground.withOpacity(0.7),
                     disabledForegroundColor:
-                        buttonForeground.withValues(alpha: 0.7),
+                        buttonForeground.withOpacity(0.7),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),

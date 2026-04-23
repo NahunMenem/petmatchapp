@@ -1473,7 +1473,7 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                   fontWeight: FontWeight.w700,
                 ),
                 backgroundColor: Colors.white,
-                selectedColor: AppColors.primary.withValues(alpha: 0.14),
+                selectedColor: AppColors.primary.withOpacity(0.14),
                 side: BorderSide(
                   color: selected ? AppColors.primary : AppColors.divider,
                 ),
@@ -1507,7 +1507,7 @@ class _FiltersSheetState extends State<_FiltersSheet> {
                   fontWeight: FontWeight.w700,
                 ),
                 backgroundColor: Colors.white,
-                selectedColor: AppColors.primary.withValues(alpha: 0.14),
+                selectedColor: AppColors.primary.withOpacity(0.14),
                 side: BorderSide(
                   color: selected ? AppColors.primary : AppColors.divider,
                 ),
