@@ -1,0 +1,830 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/theme/app_colors.dart';
+import '../../models/pet_model.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/patitas_provider.dart';
+import '../../providers/pets_provider.dart';
+import '../../widgets/brand_logo.dart';
+import '../../widgets/pet_card.dart';
+
+class ExploreScreen extends ConsumerStatefulWidget {
+  const ExploreScreen({super.key});
+
+  @override
+  ConsumerState<ExploreScreen> createState() => _ExploreScreenState();
+}
+
+class _ExploreScreenState extends ConsumerState<ExploreScreen> {
+  final CardSwiperController _swiperController = CardSwiperController();
+  bool _askedLocation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadCurrentLocation();
+    });
+  }
+
+  @override
+  void dispose() {
+    _swiperController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadCurrentLocation() async {
+    if (_askedLocation) return;
+    _askedLocation = true;
+    if (ref.read(exploreLocationProvider) != null) return;
+    try {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) return;
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      ref.read(exploreLocationProvider.notifier).state = ExploreLocation(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+      await ref.read(authServiceProvider).updateLocation(
+            latitude: position.latitude,
+            longitude: position.longitude,
+          );
+    } catch (_) {}
+  }
+
+  Future<void> _sendSuperLike() async {
+    const cost = 10;
+    final wallet = ref.read(patitasWalletProvider).valueOrNull;
+    if ((wallet?.patitas ?? 0) < cost) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              const Text('Necesitas 10 Patitas para enviar un Super Like.'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(
+            label: 'Comprar',
+            textColor: Colors.white,
+            onPressed: () => context.push('/paw-points/buy'),
+          ),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await ref.read(exploreProvider.notifier).superLikeCurrentPet();
+      ref.invalidate(patitasWalletProvider);
+      ref.invalidate(receivedLikesProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Super Like enviado'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('No se pudo enviar el Super Like.'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(
+            label: 'Comprar',
+            textColor: Colors.white,
+            onPressed: () => context.push('/paw-points/buy'),
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final petsAsync = ref.watch(exploreProvider);
+    final matchPet = ref.watch(matchPetProvider);
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            BrandLogo(width: 110, height: 30),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.tune_rounded),
+            onPressed: () => _showFilterSheet(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () => context.push('/notifications'),
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          petsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) =>
+                _ErrorView(onRetry: () => ref.invalidate(exploreProvider)),
+            data: (pets) {
+              if (pets.isEmpty) {
+                return const _EmptyView();
+              }
+              return _SwipeView(
+                pets: pets,
+                controller: _swiperController,
+                onSuperLike: _sendSuperLike,
+                onSwipe: (index, _, direction) {
+                  if (direction == CardSwiperDirection.right) {
+                    ref.read(exploreProvider.notifier).likeCurrentPet();
+                  } else if (direction == CardSwiperDirection.left) {
+                    ref.read(exploreProvider.notifier).dislikeCurrentPet();
+                  }
+                  return true;
+                },
+              );
+            },
+          ),
+
+          // Match overlay
+          if (matchPet != null)
+            _MatchOverlay(
+              pet: matchPet,
+              onDismiss: () {
+                ref.read(matchPetProvider.notifier).state = null;
+              },
+              onMessage: () {
+                ref.read(matchPetProvider.notifier).state = null;
+                context.go('/chat');
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showFilterSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _PremiumFilterSheet(),
+    );
+  }
+}
+
+class _SwipeView extends StatelessWidget {
+  final List<PetModel> pets;
+  final CardSwiperController controller;
+  final CardSwiperOnSwipe onSwipe;
+  final VoidCallback onSuperLike;
+
+  const _SwipeView({
+    required this.pets,
+    required this.controller,
+    required this.onSwipe,
+    required this.onSuperLike,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Swiper
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: CardSwiper(
+              controller: controller,
+              cardsCount: pets.length,
+              onSwipe: onSwipe,
+              numberOfCardsDisplayed: pets.length == 1 ? 1 : 2,
+              backCardOffset: const Offset(0, -16),
+              padding: const EdgeInsets.only(top: 8, bottom: 8),
+              cardBuilder: (context, index, realIndex, count) {
+                return PetCard(pet: pets[index]);
+              },
+            ),
+          ),
+        ),
+
+        // Action buttons
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 60),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // Dislike
+              _ActionButton(
+                icon: Icons.close_rounded,
+                color: AppColors.dislikeRed,
+                size: 52,
+                onTap: () => controller.swipe(CardSwiperDirection.left),
+              ),
+              // Super like
+              _ActionButton(
+                icon: Icons.star_rounded,
+                color: AppColors.gold,
+                size: 44,
+                onTap: onSuperLike,
+              ),
+              // Like
+              _ActionButton(
+                icon: Icons.favorite_rounded,
+                color: AppColors.likeGreen,
+                size: 52,
+                onTap: () => controller.swipe(CardSwiperDirection.right),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final double size;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.icon,
+    required this.color,
+    required this.size,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.25),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(icon, color: color, size: size * 0.5),
+      ),
+    );
+  }
+}
+
+class _MatchOverlay extends StatelessWidget {
+  final PetModel pet;
+  final VoidCallback onDismiss;
+  final VoidCallback onMessage;
+
+  const _MatchOverlay({
+    required this.pet,
+    required this.onDismiss,
+    required this.onMessage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.85),
+      child: SafeArea(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ShaderMask(
+              shaderCallback: (bounds) =>
+                  AppColors.matchGradient.createShader(bounds),
+              child: const Text(
+                '¡Es un Match!',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 36,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'A ${pet.name} y a tu mascota les gustaron mutuamente',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.85),
+                fontSize: 15,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 40),
+            // Pet photo
+            Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.primary, width: 4),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.4),
+                    blurRadius: 24,
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: pet.mainPhoto.isNotEmpty
+                    ? Image.network(pet.mainPhoto, fit: BoxFit.cover)
+                    : Container(
+                        color: AppColors.surfaceVariant,
+                        child: const Icon(Icons.pets, size: 60),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 48),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: onMessage,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'Enviar mensaje',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextButton(
+                    onPressed: onDismiss,
+                    child: Text(
+                      'Seguir explorando',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyView extends StatelessWidget {
+  const _EmptyView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.search_off_rounded,
+              size: 80, color: AppColors.textHint),
+          const SizedBox(height: 16),
+          Text(
+            'No hay más mascotas cerca',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Volvé más tarde o ampliá los filtros',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  final VoidCallback onRetry;
+  const _ErrorView({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 60, color: AppColors.error),
+          const SizedBox(height: 16),
+          const Text('Error al cargar mascotas'),
+          const SizedBox(height: 12),
+          ElevatedButton(onPressed: onRetry, child: const Text('Reintentar')),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Paywall de filtros premium ─────────────────────────────────────────────
+
+class _PremiumFilterSheet extends ConsumerWidget {
+  const _PremiumFilterSheet();
+
+  static const _features = [
+    (Icons.pets_outlined, 'Tipo de mascota', 'Perros, gatos y más'),
+    (Icons.biotech_outlined, 'Raza específica', 'Golden, Labrador, Siamés...'),
+    (Icons.cake_outlined, 'Rango de edad', 'Cachorro, adulto, mayor'),
+    (
+      Icons.map_outlined,
+      'Radio ampliado',
+      'Gratis 10 km, hasta 50 km con Patitas'
+    ),
+    (
+      Icons.health_and_safety_outlined,
+      'Solo vacunados / castrados',
+      'Filtrá por estado sanitario'
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen(advancedFiltersProvider, (_, next) {
+      next.whenOrNull(
+        error: (error, _) {
+          final insufficient = error.toString().contains('402');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                insufficient
+                    ? 'Necesitas Patitas para activar filtros avanzados.'
+                    : 'No se pudieron activar los filtros avanzados.',
+              ),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              action: insufficient
+                  ? SnackBarAction(
+                      label: 'Comprar',
+                      textColor: Colors.white,
+                      onPressed: () => context.push('/paw-points/buy'),
+                    )
+                  : null,
+            ),
+          );
+        },
+      );
+    });
+
+    final access = ref.watch(advancedFiltersProvider);
+    if (access.valueOrNull?.active == true) {
+      return const _AdvancedFiltersSheet();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 80),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.divider,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Badge PREMIUM
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.workspace_premium_rounded,
+                    color: Colors.white, size: 14),
+                SizedBox(width: 6),
+                Text(
+                  'FUNCIÓN PREMIUM',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          const Text(
+            'Filtros Avanzados',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              'Encontrá exactamente la mascota que buscás',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Features list
+          ...(_features.map(
+            (f) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Color(0xFFFFF3E0),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Icon(f.$1, color: AppColors.primary, size: 19),
+                  ),
+                  SizedBox(width: 14),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        f.$2,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        f.$3,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          )),
+
+          // Precio
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF8F0),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Pago único · Sin renovación',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          '30 Patitas',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.verified_rounded,
+                      color: AppColors.success, size: 32),
+                ],
+              ),
+            ),
+          ),
+
+          // Botón Mercado Pago
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: access.isLoading
+                    ? null
+                    : () async {
+                        await ref
+                            .read(advancedFiltersProvider.notifier)
+                            .activate();
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                icon: const Icon(Icons.pets_rounded),
+                label: const Text(
+                  'Activar con 30 Patitas',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                ),
+              ),
+            ),
+          ),
+
+          // Link "ahora no"
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Ahora no · Ver sin filtros',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdvancedFiltersSheet extends ConsumerStatefulWidget {
+  const _AdvancedFiltersSheet();
+
+  @override
+  ConsumerState<_AdvancedFiltersSheet> createState() =>
+      _AdvancedFiltersSheetState();
+}
+
+class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
+  late final TextEditingController _breedCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _breedCtrl = TextEditingController(text: ref.read(exploreBreedProvider));
+  }
+
+  @override
+  void dispose() {
+    _breedCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = ref.watch(exploreMaxDistanceProvider);
+    final vaccinated = ref.watch(exploreVaccinatedOnlyProvider);
+    final sterilized = ref.watch(exploreSterilizedOnlyProvider);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 80),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.divider,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Filtros Avanzados',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 18),
+          TextField(
+            controller: _breedCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Raza especifica',
+              prefixIcon: Icon(Icons.biotech_outlined),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              const Icon(Icons.map_outlined, color: AppColors.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Radio de busqueda: $radius km',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+          Slider(
+            min: 1,
+            max: 50,
+            divisions: 49,
+            value: radius.toDouble().clamp(1, 50),
+            onChanged: (value) {
+              ref.read(exploreMaxDistanceProvider.notifier).state =
+                  value.round();
+            },
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Solo vacunados'),
+            value: vaccinated,
+            onChanged: (value) =>
+                ref.read(exploreVaccinatedOnlyProvider.notifier).state = value,
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Solo castrados'),
+            value: sterilized,
+            onChanged: (value) =>
+                ref.read(exploreSterilizedOnlyProvider.notifier).state = value,
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: () {
+                ref.read(exploreBreedProvider.notifier).state =
+                    _breedCtrl.text.trim();
+                ref.invalidate(exploreProvider);
+                Navigator.pop(context);
+              },
+              child: const Text('Aplicar filtros'),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              _breedCtrl.clear();
+              ref.read(exploreBreedProvider.notifier).state = '';
+              ref.read(exploreMaxDistanceProvider.notifier).state = 10;
+              ref.read(exploreVaccinatedOnlyProvider.notifier).state = false;
+              ref.read(exploreSterilizedOnlyProvider.notifier).state = false;
+              ref.invalidate(exploreProvider);
+              Navigator.pop(context);
+            },
+            child: const Text('Limpiar filtros'),
+          ),
+        ],
+      ),
+    );
+  }
+}
