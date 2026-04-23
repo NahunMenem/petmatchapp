@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../core/utils/app_snack_bar.dart';
 import '../../core/utils/validators.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/brand_logo.dart';
-import '../../widgets/primary_button.dart';
 import '../../widgets/google_button.dart';
+import '../../widgets/primary_button.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -20,6 +21,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _referralCtrl = TextEditingController();
   bool _obscurePass = true;
   bool _loading = false;
 
@@ -28,16 +30,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
+    _referralCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-    await ref.read(authProvider.notifier).register(
+    await ref.read(authProvider.notifier).registerWithReferral(
           _nameCtrl.text.trim(),
           _emailCtrl.text.trim(),
           _passCtrl.text,
+          referralCode: _referralCtrl.text.trim().isEmpty
+              ? null
+              : _referralCtrl.text.trim(),
         );
     if (mounted) setState(() => _loading = false);
   }
@@ -53,12 +59,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         },
         error: (e, _) {
           if (mounted) setState(() => _loading = false);
-          final msg = e.toString().contains('400')
-              ? 'Ya existe una cuenta con ese email'
-              : e.toString().contains('SocketException') ||
-                      e.toString().contains('Connection')
-                  ? 'Sin conexión al servidor'
-                  : 'Error al crear la cuenta';
+          final errorText = e.toString();
+          final msg = errorText.contains('Codigo de referido invalido')
+              ? 'El codigo de referido no es valido.'
+              : errorText.contains('400')
+                  ? 'Ya existe una cuenta con ese email'
+                  : errorText.contains('SocketException') ||
+                          errorText.contains('Connection')
+                      ? 'Sin conexion al servidor'
+                      : 'Error al crear la cuenta';
           AppSnackBar.error(
             context,
             message: msg,
@@ -90,12 +99,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Bienvenido a\nPawMatch 🐾',
+                  'Bienvenido a\nPawMatch',
                   style: Theme.of(context).textTheme.headlineLarge,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Creá tu cuenta para empezar',
+                  'Crea tu cuenta para empezar',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 32),
@@ -127,7 +136,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _register(),
                   decoration: InputDecoration(
-                    hintText: 'Contraseña',
+                    hintText: 'Contrasena',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -140,6 +149,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                   ),
                   validator: Validators.password,
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _referralCtrl,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: const InputDecoration(
+                    hintText: 'Codigo de referido (opcional)',
+                    prefixIcon: Icon(Icons.card_giftcard_rounded),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Si te invitaron a PawMatch, carga el codigo y ambos reciben 10 Patitas. Tambien funciona si te registras con Google.',
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 28),
                 PrimaryButton(
@@ -166,7 +189,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   label: 'Registrarse con Google',
                   onPressed: _loading
                       ? null
-                      : () => ref.read(authProvider.notifier).loginWithGoogle(),
+                      : () => ref.read(authProvider.notifier).loginWithGoogle(
+                            referralCode: _referralCtrl.text.trim().isEmpty
+                                ? null
+                                : _referralCtrl.text.trim(),
+                          ),
                 ),
                 const SizedBox(height: 32),
               ],

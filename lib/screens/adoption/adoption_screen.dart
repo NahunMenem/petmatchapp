@@ -1464,9 +1464,21 @@ class _FiltersSheetState extends State<_FiltersSheet> {
             spacing: 8,
             children: ['Cachorro', 'Joven', 'Adulto', 'Senior'].map((age) {
               final ageKey = age.toLowerCase();
+              final selected = _filters.age == ageKey;
               return FilterChip(
                 label: Text(age),
-                selected: _filters.age == ageKey,
+                labelStyle: TextStyle(
+                  color:
+                      selected ? AppColors.primary : AppColors.textSecondary,
+                  fontWeight: FontWeight.w700,
+                ),
+                backgroundColor: Colors.white,
+                selectedColor: AppColors.primary.withValues(alpha: 0.14),
+                side: BorderSide(
+                  color: selected ? AppColors.primary : AppColors.divider,
+                ),
+                checkmarkColor: AppColors.primary,
+                selected: selected,
                 onSelected: (selected) => setState(
                   () => _filters = _filters.copyWith(
                     age: selected ? ageKey : null,
@@ -1486,9 +1498,21 @@ class _FiltersSheetState extends State<_FiltersSheet> {
               ('Mediano', 'medium'),
               ('Grande', 'large'),
             ].map((entry) {
+              final selected = _filters.size == entry.$2;
               return FilterChip(
                 label: Text(entry.$1),
-                selected: _filters.size == entry.$2,
+                labelStyle: TextStyle(
+                  color:
+                      selected ? AppColors.primary : AppColors.textSecondary,
+                  fontWeight: FontWeight.w700,
+                ),
+                backgroundColor: Colors.white,
+                selectedColor: AppColors.primary.withValues(alpha: 0.14),
+                side: BorderSide(
+                  color: selected ? AppColors.primary : AppColors.divider,
+                ),
+                checkmarkColor: AppColors.primary,
+                selected: selected,
                 onSelected: (selected) => setState(
                   () => _filters = _filters.copyWith(
                     size: selected ? entry.$2 : null,

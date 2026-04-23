@@ -84,16 +84,36 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         name: name,
         email: email,
         password: password,
+        referralCode: null,
       );
       return AuthState(status: AuthStatus.authenticated, user: user);
     });
   }
 
-  Future<void> loginWithGoogle() async {
+  Future<void> registerWithReferral(
+    String name,
+    String email,
+    String password, {
+    String? referralCode,
+  }) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final service = ref.read(authServiceProvider);
-      final user = await service.signInWithGoogle();
+      final user = await service.register(
+        name: name,
+        email: email,
+        password: password,
+        referralCode: referralCode,
+      );
+      return AuthState(status: AuthStatus.authenticated, user: user);
+    });
+  }
+
+  Future<void> loginWithGoogle({String? referralCode}) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final service = ref.read(authServiceProvider);
+      final user = await service.signInWithGoogle(referralCode: referralCode);
       if (user == null) {
         return const AuthState(status: AuthStatus.unauthenticated);
       }

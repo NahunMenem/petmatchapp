@@ -156,17 +156,20 @@ class _BuyPawPointsScreenState extends ConsumerState<BuyPawPointsScreen>
               ),
             ),
             const SizedBox(height: 14),
-            for (final pack in packs) ...[
-              _PackCard(
-                pack: pack,
-                isHighlighted: pack.id == 'popular',
-                isDark: pack.id == 'pro',
-                highlightLabel: pack.id == 'popular' ? 'MAS POPULAR' : null,
-                isLoading: _loadingPackId == pack.id,
-                onBuy: () => _buy(pack),
-              ),
-              const SizedBox(height: 16),
-            ],
+            if (packs.isEmpty)
+              const _EmptyPacks()
+            else
+              for (final pack in packs) ...[
+                _PackCard(
+                  pack: pack,
+                  isHighlighted: pack.id == 'popular',
+                  isDark: pack.id == 'pro',
+                  highlightLabel: pack.id == 'popular' ? 'MAS POPULAR' : null,
+                  isLoading: _loadingPackId == pack.id,
+                  onBuy: () => _buy(pack),
+                ),
+                const SizedBox(height: 16),
+              ],
           ],
         ),
       ),
@@ -406,7 +409,7 @@ class _PackCard extends StatelessWidget {
         ? Colors.white
         : isDark
             ? AppColors.primary
-            : AppColors.surfaceVariant.withOpacity(0.75);
+            : AppColors.surfaceVariant.withValues(alpha: 0.75);
     final buttonForeground = isHighlighted
         ? AppColors.primary
         : isDark
@@ -434,7 +437,7 @@ class _PackCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.18),
+                color: Colors.white.withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
@@ -528,9 +531,9 @@ class _PackCard extends StatelessWidget {
                     backgroundColor: buttonBackground,
                     foregroundColor: buttonForeground,
                     disabledBackgroundColor:
-                        buttonBackground.withOpacity(0.7),
+                        buttonBackground.withValues(alpha: 0.7),
                     disabledForegroundColor:
-                        buttonForeground.withOpacity(0.7),
+                        buttonForeground.withValues(alpha: 0.7),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
@@ -564,6 +567,28 @@ class _EmptyTransactions extends StatelessWidget {
       ),
       child: const Text(
         'Todavia no tenes movimientos.',
+        style: TextStyle(
+          color: AppColors.textSecondary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyPacks extends StatelessWidget {
+  const _EmptyPacks();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const Text(
+        'No hay packs de Patitas disponibles en este momento.',
         style: TextStyle(
           color: AppColors.textSecondary,
           fontWeight: FontWeight.w600,

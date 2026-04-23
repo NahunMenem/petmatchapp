@@ -9,6 +9,7 @@ class UserModel {
   final bool isVerified;
   final bool isPremium;
   final int patitas;
+  final String? referralCode;
   final DateTime createdAt;
 
   const UserModel({
@@ -22,6 +23,7 @@ class UserModel {
     this.isVerified = false,
     this.isPremium = false,
     this.patitas = 0,
+    this.referralCode,
     required this.createdAt,
   });
 
@@ -37,6 +39,7 @@ class UserModel {
       isVerified: json['is_verified'] as bool? ?? false,
       isPremium: json['is_premium'] as bool? ?? false,
       patitas: json['patitas'] as int? ?? 0,
+      referralCode: json['referral_code'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
@@ -52,6 +55,7 @@ class UserModel {
         'is_verified': isVerified,
         'is_premium': isPremium,
         'patitas': patitas,
+        'referral_code': referralCode,
         'created_at': createdAt.toIso8601String(),
       };
 
@@ -66,6 +70,7 @@ class UserModel {
     bool? isVerified,
     bool? isPremium,
     int? patitas,
+    String? referralCode,
     DateTime? createdAt,
   }) {
     return UserModel(
@@ -79,6 +84,7 @@ class UserModel {
       isVerified: isVerified ?? this.isVerified,
       isPremium: isPremium ?? this.isPremium,
       patitas: patitas ?? this.patitas,
+      referralCode: referralCode ?? this.referralCode,
       createdAt: createdAt ?? this.createdAt,
     );
   }

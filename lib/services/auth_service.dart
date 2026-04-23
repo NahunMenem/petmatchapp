@@ -1,5 +1,6 @@
 import 'package:google_sign_in/google_sign_in.dart';
 import '../core/constants/api_constants.dart';
+import '../models/referral_model.dart';
 import '../models/user_model.dart';
 import 'api_service.dart';
 import 'storage_service.dart';
@@ -30,15 +31,22 @@ class AuthService {
     required String name,
     required String email,
     required String password,
+    String? referralCode,
   }) async {
     final response = await _api.post(
       ApiConstants.register,
-      data: {'name': name, 'email': email, 'password': password},
+      data: {
+        'name': name,
+        'email': email,
+        'password': password,
+        if (referralCode != null && referralCode.trim().isNotEmpty)
+          'referral_code': referralCode.trim(),
+      },
     );
     return _handleAuthResponse(response.data);
   }
 
-  Future<UserModel?> signInWithGoogle() async {
+  Future<UserModel?> signInWithGoogle({String? referralCode}) async {
     final googleUser = await _googleSignIn.signIn();
     if (googleUser == null) return null;
 
@@ -53,6 +61,8 @@ class AuthService {
         if (googleAuth.idToken != null) 'id_token': googleAuth.idToken,
         if (googleAuth.accessToken != null)
           'access_token': googleAuth.accessToken,
+        if (referralCode != null && referralCode.trim().isNotEmpty)
+          'referral_code': referralCode.trim(),
       },
     );
     return _handleAuthResponse(response.data);
@@ -61,6 +71,11 @@ class AuthService {
   Future<UserModel> getMe() async {
     final response = await _api.get(ApiConstants.me);
     return UserModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<ReferralSummary> getReferralSummary() async {
+    final response = await _api.get(ApiConstants.myReferral);
+    return ReferralSummary.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<UserModel> updateLocation({

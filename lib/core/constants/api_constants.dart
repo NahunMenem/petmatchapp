@@ -11,6 +11,7 @@ class ApiConstants {
   static const String refreshToken = '/auth/refresh';
   static const String me = '/auth/me';
   static const String updateLocation = '/auth/me/location';
+  static const String myReferral = '/auth/referral/me';
 
   // Pets
   static const String pets = '/pets';

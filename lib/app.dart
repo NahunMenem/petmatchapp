@@ -14,6 +14,7 @@ import 'screens/adoption/publish_adoption_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
 import 'screens/likes/received_likes_screen.dart';
 import 'screens/profile/paw_points_screen.dart';
+import 'screens/profile/referrals_screen.dart';
 import 'services/push_notification_service.dart';
 
 final _routerProvider = Provider<GoRouter>((ref) {
@@ -89,6 +90,10 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/paw-points/buy',
         builder: (_, __) => const BuyPawPointsScreen(),
+      ),
+      GoRoute(
+        path: '/referrals',
+        builder: (_, __) => const ReferralsScreen(),
       ),
     ],
   );

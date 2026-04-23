@@ -1,11 +1,12 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import '../../core/utils/app_snack_bar.dart';
+
 import '../../core/theme/app_colors.dart';
-import '../../models/pet_model.dart';
+import '../../core/utils/app_snack_bar.dart';
 import '../../models/adoption_model.dart';
+import '../../models/pet_model.dart';
 import '../../providers/adoption_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/chat_provider.dart';
@@ -36,9 +37,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final myPetsAsync = ref.watch(myPetsProvider);
     final conversationsAsync = ref.watch(conversationsProvider);
     final myAdoptionsAsync = ref.watch(myAdoptionsProvider);
-    final patitas = ref.watch(patitasWalletProvider).valueOrNull?.patitas ??
-        user?.patitas ??
-        0;
+    final patitas =
+        ref.watch(patitasWalletProvider).valueOrNull?.patitas ?? user?.patitas ?? 0;
     final receivedLikes =
         ref.watch(receivedLikesProvider).valueOrNull?.total ?? 0;
     final petCount = myPetsAsync.valueOrNull?.length ?? 0;
@@ -51,7 +51,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // App bar with profile
           SliverAppBar(
             expandedHeight: 180,
             pinned: true,
@@ -111,7 +110,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         Text(
                           user!.location!,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 13,
                           ),
                         ),
@@ -121,11 +120,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
           ),
-
           SliverToBoxAdapter(
             child: Column(
               children: [
-                // Stats
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Row(
@@ -136,8 +133,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ],
                   ),
                 ),
-
-                // My pets
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
@@ -155,7 +150,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ],
                   ),
                 ),
-
                 myPetsAsync.when(
                   loading: () => const Padding(
                     padding: EdgeInsets.all(20),
@@ -166,7 +160,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ? Padding(
                           padding: const EdgeInsets.all(20),
                           child: Text(
-                            'No tenés mascotas aún. ¡Agregá una!',
+                            'No tenes mascotas aun. Agrega una.',
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         )
@@ -190,14 +184,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ),
                         ),
                 ),
-
                 const SizedBox(height: 16),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Divider(),
                 ),
-
-                // Options
                 _PawPointsTile(
                   points: patitas,
                   onTap: () => Navigator.of(context).push(
@@ -211,18 +202,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onTap: () => context.push('/likes-received'),
                 ),
                 _OptionTile(
+                  icon: Icons.card_giftcard_rounded,
+                  label: 'Invitar amigos',
+                  onTap: () => context.push('/referrals'),
+                ),
+                _OptionTile(
                   icon: Icons.notifications_outlined,
                   label: 'Notificaciones',
                   onTap: () => context.push('/notifications'),
                 ),
                 _OptionTile(
                   icon: Icons.slideshow_rounded,
-                  label: 'Cómo funciona PawMatch',
+                  label: 'Como funciona PawMatch',
                   onTap: () => showHomeIntroDialog(context),
                 ),
                 _OptionTile(
                   icon: Icons.logout_outlined,
-                  label: 'Cerrar sesión',
+                  label: 'Cerrar sesion',
                   color: AppColors.error,
                   onTap: () async {
                     await ref.read(authProvider.notifier).logout();
@@ -248,7 +244,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Eliminar mascota'),
         content: Text(
-          '¿Querés eliminar a ${pet.name}? También se van a cerrar sus matches y chats asociados.',
+          'Quieres eliminar a ${pet.name}? Tambien se van a cerrar sus matches y chats asociados.',
         ),
         actions: [
           TextButton(
@@ -307,61 +303,63 @@ class _PawPointsTile extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: onTap,
-          child: Container(
+          child: SizedBox(
             height: _tileHeight,
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.pets_outlined,
-                  color: AppColors.primary,
-                  size: 26,
-                ),
-                const SizedBox(width: 16),
-                const Expanded(
-                  child: Text(
-                    'Mis Patitas',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.pets_outlined,
+                    color: AppColors.primary,
+                    size: 26,
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Text(
+                      'Mis Patitas',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
-                ),
-                Container(
-                  height: 32,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '$points',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
+                  Container(
+                    height: 32,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '$points',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.pets,
-                        color: Colors.white,
-                        size: 13,
-                      ),
-                    ],
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.pets,
+                          color: Colors.white,
+                          size: 13,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.primary,
-                  size: 28,
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.primary,
+                    size: 28,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -396,7 +394,7 @@ class _LikesTile extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AppColors.primary.withOpacity(0.25),
+                color: AppColors.primary.withValues(alpha: 0.25),
               ),
             ),
             child: Row(
@@ -405,7 +403,7 @@ class _LikesTile extends StatelessWidget {
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(
@@ -428,7 +426,7 @@ class _LikesTile extends StatelessWidget {
                   height: 32,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   alignment: Alignment.center,
@@ -505,25 +503,101 @@ class _PetListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: pet.isActive
+              ? AppColors.success.withValues(alpha: 0.45)
+              : Colors.transparent,
+          width: 1.6,
+        ),
+      ),
       child: ListTile(
         onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: SizedBox(
-            width: 52,
-            height: 52,
-            child: pet.mainPhoto.isNotEmpty
-                ? CachedNetworkImage(imageUrl: pet.mainPhoto, fit: BoxFit.cover)
-                : Container(
-                    color: AppColors.surfaceVariant,
-                    child: const Icon(Icons.pets, color: AppColors.textHint),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        leading: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: SizedBox(
+                width: 52,
+                height: 52,
+                child: pet.mainPhoto.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: pet.mainPhoto,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        color: AppColors.surfaceVariant,
+                        child: const Icon(Icons.pets, color: AppColors.textHint),
+                      ),
+              ),
+            ),
+            if (pet.isActive)
+              Positioned(
+                right: -4,
+                top: -4,
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: AppColors.success,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
                   ),
+                ),
+              ),
+          ],
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                pet.name,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+            if (pet.isActive)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Text(
+                  'Activa ahora',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.success,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('${pet.breed} · ${pet.age}'),
+              const SizedBox(height: 4),
+              Text(
+                pet.isActive
+                    ? 'Es la mascota visible en Explorar y Matches.'
+                    : 'Pausada para buscar pareja.',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color:
+                      pet.isActive ? AppColors.success : AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
         ),
-        title:
-            Text(pet.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: Text('${pet.breed} · ${pet.age}'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -531,12 +605,12 @@ class _PetListTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: pet.isActive
-                    ? AppColors.success.withOpacity(0.12)
-                    : AppColors.textHint.withOpacity(0.15),
+                    ? AppColors.success.withValues(alpha: 0.12)
+                    : AppColors.textHint.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                pet.isActive ? 'Buscando pareja' : 'Desactivada',
+                pet.isActive ? 'Buscando pareja' : 'Pausada',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -584,37 +658,39 @@ class _OptionTile extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: onTap,
-          child: Container(
+          child: SizedBox(
             height: _tileHeight,
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: (color ?? AppColors.primary).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(14),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: (color ?? AppColors.primary).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(icon, color: color ?? AppColors.primary),
                   ),
-                  child: Icon(icon, color: color ?? AppColors.primary),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: color ?? AppColors.textPrimary,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: color ?? AppColors.textPrimary,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
-                ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.textHint,
-                  size: 28,
-                ),
-              ],
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.textHint,
+                    size: 28,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -9,11 +9,7 @@ final patitasServiceProvider = Provider<PatitasService>((ref) {
 });
 
 final patitasPacksProvider = FutureProvider<List<PatitasPack>>((ref) async {
-  try {
-    return await ref.read(patitasServiceProvider).getPacks();
-  } catch (_) {
-    return PatitasFallback.packs;
-  }
+  return ref.read(patitasServiceProvider).getPacks();
 });
 
 final patitasWalletProvider =

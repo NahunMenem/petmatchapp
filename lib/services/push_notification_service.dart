@@ -17,6 +17,14 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 class PushNotificationService {
   PushNotificationService._();
 
+  static const String _androidChannelId = 'pawmatch_alerts_v2';
+  static const String _androidChannelName = 'PawMatch';
+  static const String _androidChannelDescription =
+      'Notificaciones de PawMatch';
+  static const fln.RawResourceAndroidNotificationSound _androidSound =
+      fln.RawResourceAndroidNotificationSound('alerta');
+  static const String _iosSound = 'alerta.caf';
+
   static final PushNotificationService instance = PushNotificationService._();
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static final fln.FlutterLocalNotificationsPlugin _localNotifications =
@@ -130,10 +138,12 @@ class PushNotificationService {
     await _localNotifications.initialize(initSettings);
 
     const channel = fln.AndroidNotificationChannel(
-      'petmatch_default',
-      'PawMatch',
-      description: 'Notificaciones de PawMatch',
+      _androidChannelId,
+      _androidChannelName,
+      description: _androidChannelDescription,
       importance: fln.Importance.high,
+      playSound: true,
+      sound: _androidSound,
     );
 
     await _localNotifications
@@ -156,13 +166,18 @@ class PushNotificationService {
 
     const details = fln.NotificationDetails(
       android: fln.AndroidNotificationDetails(
-        'petmatch_default',
-        'PawMatch',
-        channelDescription: 'Notificaciones de PawMatch',
+        _androidChannelId,
+        _androidChannelName,
+        channelDescription: _androidChannelDescription,
         importance: fln.Importance.high,
         priority: fln.Priority.high,
+        playSound: true,
+        sound: _androidSound,
       ),
-      iOS: fln.DarwinNotificationDetails(),
+      iOS: fln.DarwinNotificationDetails(
+        presentSound: true,
+        sound: _iosSound,
+      ),
     );
 
     await _localNotifications.show(

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -99,15 +100,29 @@ class _PetDetailScreenState extends ConsumerState<PetDetailScreen> {
       ref.invalidate(exploreProvider);
 
       if (!silent && mounted) {
-        _showSnack('Mascota actualizada');
+        _showSnack(
+          _isActive
+              ? 'Mascota actualizada. Las otras mascotas quedaron pausadas para buscar pareja.'
+              : 'Mascota actualizada',
+        );
       }
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
-        _showSnack('No se pudo guardar la mascota', isError: true);
+        _showSnack(_errorMessage(error), isError: true);
       }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  String _errorMessage(Object error) {
+    if (error is DioException) {
+      final detail = error.response?.data;
+      if (detail is Map<String, dynamic> && detail['detail'] is String) {
+        return detail['detail'] as String;
+      }
+    }
+    return 'No se pudo guardar la mascota';
   }
 
   void _showSnack(String message, {bool isError = false}) {
@@ -468,6 +483,14 @@ class _AvailabilityCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  'Solo una mascota por cuenta puede buscar pareja a la vez.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textHint,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

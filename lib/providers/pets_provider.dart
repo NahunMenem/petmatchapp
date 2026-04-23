@@ -124,7 +124,9 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
   Future<void> dislikeCurrentPet() async {
     final current = state.value;
     if (current == null || current.isEmpty) return;
+    final pet = current[0];
     removeCurrent();
+    await ref.read(petServiceProvider).dislikePet(pet.id);
   }
 }
 
