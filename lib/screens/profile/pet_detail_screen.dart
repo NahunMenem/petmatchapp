@@ -145,7 +145,7 @@ class _PetDetailScreenState extends ConsumerState<PetDetailScreen> {
               label: const Text('Editar'),
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.primary,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.09),
+                backgroundColor: AppColors.primary.withOpacity(0.09),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18),
                 ),
@@ -184,7 +184,7 @@ class _PetDetailScreenState extends ConsumerState<PetDetailScreen> {
                     icon: const Icon(Icons.photo_camera_outlined, size: 15),
                     label: const Text('Cambiar fotos'),
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.black.withValues(alpha: 0.65),
+                      backgroundColor: Colors.black.withOpacity(0.65),
                       foregroundColor: Colors.white,
                       minimumSize: const Size(0, 34),
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -442,7 +442,7 @@ class _AvailabilityCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
+              color: AppColors.primary.withOpacity(0.12),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -477,7 +477,7 @@ class _AvailabilityCard extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: AppColors.primary,
+            activeColor: AppColors.primary,
           ),
         ],
       ),
@@ -550,7 +550,7 @@ class _SelectField<T> extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         DropdownButtonFormField<T>(
-          initialValue: value,
+          value: value,
           items: items,
           onChanged: onChanged,
           decoration: const InputDecoration(),

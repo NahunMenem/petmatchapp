@@ -165,7 +165,7 @@ class _Header extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.22),
+                  color: Colors.white.withOpacity(0.22),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -194,7 +194,7 @@ class _Header extends StatelessWidget {
                 ? 'Todavia no hay mascotas interesadas'
                 : 'Hay mascotas interesadas en la tuya',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.78),
+              color: Colors.white.withOpacity(0.78),
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -204,7 +204,7 @@ class _Header extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.18),
+                color: Colors.white.withOpacity(0.18),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -306,7 +306,7 @@ class _LockedLikeTile extends StatelessWidget {
                 ? Image.network(photoUrl!, fit: BoxFit.cover)
                 : Container(color: const Color(0xFF4D463B)),
           ),
-          Container(color: Colors.black.withValues(alpha: 0.34)),
+          Container(color: Colors.black.withOpacity(0.34)),
           const Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -520,7 +520,7 @@ class _UnlockedCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.1),
+        color: AppColors.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(18),
       ),
       child: const Row(
@@ -617,7 +617,7 @@ class _ReceivedLikeDetailScreenState
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.45),
+                                color: Colors.black.withOpacity(0.45),
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: const Row(

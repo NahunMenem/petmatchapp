@@ -308,7 +308,7 @@ class _ReportMapButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.28),
+            color: AppColors.primary.withOpacity(0.28),
             blurRadius: 22,
             offset: const Offset(0, 10),
           ),
@@ -422,7 +422,7 @@ class _MapPlaceholderState extends State<_MapPlaceholder> {
     final center = Offset(size.width / 2, 38);
     final paint = Paint()..isAntiAlias = true;
 
-    paint.color = color.withValues(alpha: 0.28);
+    paint.color = color.withOpacity(0.28);
     canvas.drawCircle(center.translate(0, 7), 34, paint);
 
     paint.color = color;
@@ -460,7 +460,7 @@ class _MapPlaceholderState extends State<_MapPlaceholder> {
       ),
       const Radius.circular(12),
     );
-    paint.color = Colors.black.withValues(alpha: 0.12);
+    paint.color = Colors.black.withOpacity(0.12);
     canvas.drawRRect(labelRect.shift(const Offset(0, 4)), paint);
     paint.color = Colors.white;
     canvas.drawRRect(labelRect, paint);
@@ -484,7 +484,7 @@ class _MapPlaceholderState extends State<_MapPlaceholder> {
     final center = Offset(size.width / 2, size.height / 2);
     final paint = Paint()..isAntiAlias = true;
 
-    paint.color = AppColors.info.withValues(alpha: 0.24);
+    paint.color = AppColors.info.withOpacity(0.24);
     canvas.drawCircle(center, 19, paint);
     paint.color = Colors.white;
     canvas.drawCircle(center, 13, paint);
@@ -638,7 +638,7 @@ class _LostPetCard extends StatelessWidget {
         border: Border.all(color: AppColors.divider),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -744,7 +744,7 @@ class _LostPetCard extends StatelessWidget {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.14),
+                        color: AppColors.warning.withOpacity(0.14),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
@@ -1445,7 +1445,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                   border: Border.all(color: AppColors.divider),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
+                      color: Colors.black.withOpacity(0.06),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -1525,7 +1525,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                 SizedBox(
                   width: 112,
                   child: DropdownButtonFormField<_PhoneCountry>(
-                    initialValue: _phoneCountry,
+                    value: _phoneCountry,
                     decoration: const InputDecoration(
                       labelText: 'Pais',
                       contentPadding: EdgeInsets.symmetric(
@@ -1585,7 +1585,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
               child: SwitchListTile(
                 value: _hasReward,
                 onChanged: (value) => setState(() => _hasReward = value),
-                activeThumbColor: AppColors.primary,
+                activeColor: AppColors.primary,
                 title: const Text('Agregar recompensa'),
                 subtitle: const Text('Opcional para incentivar la ayuda'),
                 secondary: const Icon(Icons.volunteer_activism_outlined),
@@ -1681,7 +1681,7 @@ class _MyPetChoice extends StatelessWidget {
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.primary.withValues(alpha: 0.12)
+              ? AppColors.primary.withOpacity(0.12)
               : AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
@@ -1775,7 +1775,7 @@ class _LostPetPhotoGrid extends StatelessWidget {
                 color: AppColors.surfaceVariant,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.35),
+                  color: AppColors.primary.withOpacity(0.35),
                   width: 1.5,
                 ),
               ),
@@ -1831,7 +1831,7 @@ class _PhotoThumb extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
+                color: Colors.black.withOpacity(0.6),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.close, color: Colors.white, size: 14),
@@ -1863,7 +1863,7 @@ class _TypeBtn extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.primary.withValues(alpha: 0.12)
+              ? AppColors.primary.withOpacity(0.12)
               : AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
@@ -1905,7 +1905,7 @@ class _AlertReachSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFFFF7F2),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.16)),
+        border: Border.all(color: AppColors.primary.withOpacity(0.16)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1985,7 +1985,7 @@ class _AlertReachSection extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   side: BorderSide(
-                    color: AppColors.primary.withValues(alpha: 0.32),
+                    color: AppColors.primary.withOpacity(0.32),
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -2037,7 +2037,7 @@ void _showAlertReachInfo(BuildContext context) {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
+                  color: AppColors.primary.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(
@@ -2206,7 +2206,7 @@ class _AlertReachOption extends StatelessWidget {
                       color: disabled
                           ? AppColors.textHint
                           : selected
-                              ? Colors.white.withValues(alpha: 0.78)
+                              ? Colors.white.withOpacity(0.78)
                               : AppColors.textSecondary,
                       fontSize: 11,
                     ),

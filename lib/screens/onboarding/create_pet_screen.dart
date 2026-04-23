@@ -373,6 +373,39 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
             // Photos
             _SectionLabel('Fotos'),
             const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF4EC),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: AppColors.primary.withOpacity(0.18),
+                ),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.lightbulb_outline_rounded,
+                    color: AppColors.primary,
+                    size: 18,
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Tip: si la foto principal es vertical, tu mascota se va a ver mejor en las cards y en Explorar.',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
             _PhotoGrid(
               photos: _photos,
               onAdd: _pickImage,
@@ -427,7 +460,7 @@ class _TypeChip extends StatelessWidget {
           height: 52,
           decoration: BoxDecoration(
             color: selected
-                ? AppColors.primary.withValues(alpha: 0.12)
+                ? AppColors.primary.withOpacity(0.12)
                 : AppColors.surfaceVariant,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
@@ -472,7 +505,7 @@ class _SelectChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.primary.withValues(alpha: 0.12)
+              ? AppColors.primary.withOpacity(0.12)
               : AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
@@ -568,7 +601,7 @@ class _PhotoGrid extends StatelessWidget {
                 color: AppColors.surfaceVariant,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.3),
+                  color: AppColors.primary.withOpacity(0.3),
                   width: 2,
                   strokeAlign: BorderSide.strokeAlignInside,
                 ),

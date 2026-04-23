@@ -83,18 +83,30 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: const Color(0xFFF7EDE7),
         title: conv != null
             ? Row(
                 children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundImage: conv.petPhoto.isNotEmpty
-                        ? CachedNetworkImageProvider(conv.petPhoto)
-                        : null,
-                    backgroundColor: AppColors.surfaceVariant,
-                    child: conv.petPhoto.isEmpty
-                        ? const Icon(Icons.pets, size: 16)
-                        : null,
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.matchGradient,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundImage: conv.petPhoto.isNotEmpty
+                          ? CachedNetworkImageProvider(conv.petPhoto)
+                          : null,
+                      backgroundColor: Colors.white,
+                      child: conv.petPhoto.isEmpty
+                          ? const Icon(
+                              Icons.pets,
+                              size: 16,
+                              color: AppColors.primary,
+                            )
+                          : null,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Column(
@@ -108,7 +120,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                         conv.otherUserName,
                         style: const TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w400,
+                          fontWeight: FontWeight.w500,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -120,50 +132,56 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
       ),
       body: Column(
         children: [
-          // Messages list
           Expanded(
-            child: messagesAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
-              data: (messages) {
-                _markConversationAsRead();
-                if (messages.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      '¡Rompan el hielo! Digan hola 👋',
-                      style: TextStyle(color: AppColors.textSecondary),
-                    ),
-                  );
-                }
-                WidgetsBinding.instance
-                    .addPostFrameCallback((_) => _scrollToBottom());
-                return ListView.builder(
-                  controller: _scrollCtrl,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
-                  itemCount: messages.length,
-                  itemBuilder: (_, i) {
-                    final msg = messages[i];
-                    final isMe = msg.senderId == currentUserId;
-                    return _MessageBubble(
-                      message: msg,
-                      isMe: isMe,
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFFF8F3), Color(0xFFF3F4F8)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: messagesAsync.when(
+                loading: () =>
+                    const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text('Error: $e')),
+                data: (messages) {
+                  _markConversationAsRead();
+                  if (messages.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        '¡Rompan el hielo! Digan hola 👋',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
                     );
-                  },
-                );
-              },
+                  }
+                  WidgetsBinding.instance
+                      .addPostFrameCallback((_) => _scrollToBottom());
+                  return ListView.builder(
+                    controller: _scrollCtrl,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 16),
+                    itemCount: messages.length,
+                    itemBuilder: (_, i) {
+                      final msg = messages[i];
+                      final isMe = msg.senderId == currentUserId;
+                      return _MessageBubble(
+                        message: msg,
+                        isMe: isMe,
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ),
-
-          // Input
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: const Color(0xFFF7EDE7),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
+                  color: Colors.black.withOpacity(0.06),
                   blurRadius: 8,
                   offset: const Offset(0, -2),
                 ),
@@ -188,7 +206,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
-                        fillColor: AppColors.surfaceVariant,
+                        fillColor: Colors.white,
                       ),
                     ),
                   ),
@@ -237,7 +255,16 @@ class _MessageBubble extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           gradient: isMe ? AppColors.matchGradient : null,
-          color: isMe ? null : AppColors.surfaceVariant,
+          color: isMe ? null : Colors.white,
+          boxShadow: isMe
+              ? null
+              : const [
+                  BoxShadow(
+                    color: Color(0x12000000),
+                    blurRadius: 14,
+                    offset: Offset(0, 8),
+                  ),
+                ],
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(18),
             topRight: const Radius.circular(18),

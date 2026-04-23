@@ -8,6 +8,7 @@ class StorageService {
   static const _userIdKey = 'user_id';
   static const _usernameKey = 'username';
   static const _testEmailKey = 'test_email';
+  static const _homeIntroSeenKey = 'home_intro_seen';
 
   static Future<void> saveTokens({
     required String accessToken,
@@ -39,6 +40,12 @@ class StorageService {
       _storage.write(key: _testEmailKey, value: email);
 
   static Future<String?> getTestEmail() => _storage.read(key: _testEmailKey);
+
+  static Future<void> setHomeIntroSeen(bool seen) =>
+      _storage.write(key: _homeIntroSeenKey, value: seen ? 'true' : 'false');
+
+  static Future<bool> getHomeIntroSeen() async =>
+      (await _storage.read(key: _homeIntroSeenKey)) == 'true';
 
   static Future<void> clearAll() => _storage.deleteAll();
 }

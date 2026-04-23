@@ -153,7 +153,7 @@ class _NotificationTile extends ConsumerWidget {
     return Material(
       color: notification.isRead
           ? Colors.transparent
-          : AppColors.primary.withValues(alpha: 0.04),
+          : AppColors.primary.withOpacity(0.04),
       child: InkWell(
         onTap: () async {
           if (!notification.isRead) {
@@ -285,7 +285,7 @@ class _NotificationAvatar extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 Image.network(image, fit: BoxFit.cover),
-                Container(color: color.withValues(alpha: 0.22)),
+                Container(color: color.withOpacity(0.22)),
                 Icon(icon, color: Colors.white, size: 22),
               ],
             ),

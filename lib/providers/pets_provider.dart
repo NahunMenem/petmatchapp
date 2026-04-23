@@ -25,7 +25,6 @@ final exploreBreedProvider = StateProvider<String>((ref) => '');
 final exploreSexProvider = StateProvider<String?>((ref) => null);
 final exploreVaccinatedOnlyProvider = StateProvider<bool>((ref) => false);
 final exploreSterilizedOnlyProvider = StateProvider<bool>((ref) => false);
-final exploreHiddenPetIdsProvider = StateProvider<Set<String>>((ref) => <String>{});
 
 // My Pets
 final myPetsProvider = FutureProvider<List<PetModel>>((ref) async {
@@ -48,7 +47,6 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
     ref.watch(
       advancedFiltersProvider.select((state) => state.valueOrNull?.active ?? false),
     );
-    ref.watch(exploreHiddenPetIdsProvider);
     _page = 1;
     return _fetch();
   }
@@ -67,7 +65,6 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
     final effectiveMaxDistanceKm = advancedFiltersActive
         ? maxDistanceKm.clamp(10, 50)
         : 10;
-    final hiddenPetIds = ref.read(exploreHiddenPetIdsProvider);
     final pets = await service.getExplorePets(
       type: type,
       breed: breed,
@@ -79,9 +76,7 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
       maxDistanceKm: effectiveMaxDistanceKm,
       page: _page,
     );
-    return pets
-        .where((pet) => pet.isActive && !hiddenPetIds.contains(pet.id))
-        .toList();
+    return pets.where((pet) => pet.isActive).toList();
   }
 
   Future<void> loadMore() async {
@@ -102,17 +97,10 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
     }
   }
 
-  void _hidePet(String petId) {
-    final hidden = {...ref.read(exploreHiddenPetIdsProvider)};
-    hidden.add(petId);
-    ref.read(exploreHiddenPetIdsProvider.notifier).state = hidden;
-  }
-
   Future<void> likeCurrentPet() async {
     final current = state.value;
     if (current == null || current.isEmpty) return;
     final pet = current[0];
-    _hidePet(pet.id);
     removeCurrent();
     final result = await ref.read(petServiceProvider).likePet(pet.id);
     if (result.isMatch) {
@@ -125,7 +113,6 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
     final current = state.value;
     if (current == null || current.isEmpty) return;
     final pet = current[0];
-    _hidePet(pet.id);
     removeCurrent();
     final result = await ref.read(petServiceProvider).superLikePet(pet.id);
     if (result.isMatch) {
@@ -137,12 +124,8 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
   Future<void> dislikeCurrentPet() async {
     final current = state.value;
     if (current == null || current.isEmpty) return;
-    final pet = current[0];
-    _hidePet(pet.id);
     removeCurrent();
-    await ref.read(petServiceProvider).dislikePet(pet.id);
   }
-
 }
 
 final exploreProvider = AsyncNotifierProvider<ExploreNotifier, List<PetModel>>(

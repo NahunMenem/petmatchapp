@@ -24,6 +24,14 @@
 				<string>petmatch</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>google-signin</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.104080631198-3ng0o4fp45kuftdloo8t6vg3gdk8o43m</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
@@ -34,13 +42,19 @@
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>GoogleMapsAPIKey</key>
-	<string>AIzaSyCBfnYLPF82KVB8V2vyOIXVjJqd63Ca5G0</string>
+	<string>AIzaSyCPiJM_8b2JY0AuCLGkRlimqRzt3Zre2TU</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>PawMatch usa tu ubicación para mostrar mascotas cercanas y ayudar a reportar mascotas perdidas cerca de donde fueron vistas.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>PawMatch usa tu ubicación para mostrar mascotas cercanas y ayudar a reportar mascotas perdidas cerca de donde fueron vistas.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>PawMatch usa tu ubicación para mostrar mascotas cercanas y ayudar a reportar mascotas perdidas cerca de donde fueron vistas.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

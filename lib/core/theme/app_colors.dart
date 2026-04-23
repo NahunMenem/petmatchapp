@@ -10,9 +10,9 @@ class AppColors {
   static const Color secondaryLight = Color(0xFFFF6B8A);
 
   // Backgrounds
-  static const Color background = Color(0xFFF1F1F3);
+  static const Color background = Color(0xFFF3F4F6);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = Color(0xFFF5F0EB);
+  static const Color surfaceVariant = Color(0xFFFFFFFF);
 
   // Text
   static const Color textPrimary = Color(0xFF1A1A2E);
@@ -44,7 +44,7 @@ class AppColors {
   static const Color dislikeRed = Color(0xFFFF3B6A);
 
   // Divider
-  static const Color divider = Color(0xFFE8E4DF);
+  static const Color divider = Color(0xFFE5E7EB);
 
   // Premium
   static const Color gold = Color(0xFFFFB300);

@@ -416,7 +416,7 @@ class _PublishAdoptionScreenState extends ConsumerState<PublishAdoptionScreen> {
                   border: Border.all(color: AppColors.divider),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
+                      color: Colors.black.withOpacity(0.06),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -476,7 +476,7 @@ class _PublishAdoptionScreenState extends ConsumerState<PublishAdoptionScreen> {
                 SizedBox(
                   width: 112,
                   child: DropdownButtonFormField<_PhoneCountry>(
-                    initialValue: _phoneCountry,
+                    value: _phoneCountry,
                     decoration: const InputDecoration(
                       labelText: 'Pais',
                       contentPadding: EdgeInsets.symmetric(
@@ -586,7 +586,7 @@ class _TypeButton extends StatelessWidget {
           height: 48,
           decoration: BoxDecoration(
             color: selected
-                ? AppColors.primary.withValues(alpha: 0.12)
+                ? AppColors.primary.withOpacity(0.12)
                 : AppColors.surfaceVariant,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
@@ -625,7 +625,7 @@ class _SizeButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.primary.withValues(alpha: 0.12)
+              ? AppColors.primary.withOpacity(0.12)
               : AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
@@ -698,7 +698,7 @@ class _PhotoGridSimple extends StatelessWidget {
                 color: AppColors.surfaceVariant,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3), width: 2),
+                    color: AppColors.primary.withOpacity(0.3), width: 2),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

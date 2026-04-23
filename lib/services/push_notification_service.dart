@@ -122,8 +122,12 @@ class PushNotificationService {
     if (_foregroundReady) return;
 
     const android = fln.AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initSettings = fln.InitializationSettings(android: android);
-    await _localNotifications.initialize(settings: initSettings);
+    const darwin = fln.DarwinInitializationSettings();
+    const initSettings = fln.InitializationSettings(
+      android: android,
+      iOS: darwin,
+    );
+    await _localNotifications.initialize(initSettings);
 
     const channel = fln.AndroidNotificationChannel(
       'petmatch_default',
@@ -158,13 +162,14 @@ class PushNotificationService {
         importance: fln.Importance.high,
         priority: fln.Priority.high,
       ),
+      iOS: fln.DarwinNotificationDetails(),
     );
 
     await _localNotifications.show(
-      id: notification.hashCode,
-      title: notification.title,
-      body: notification.body,
-      notificationDetails: details,
+      notification.hashCode,
+      notification.title,
+      notification.body,
+      details,
       payload: message.data['action_id'] as String?,
     );
   }

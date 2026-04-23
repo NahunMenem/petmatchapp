@@ -102,10 +102,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Container(
                             padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.92),
+                              color: Colors.white.withOpacity(0.92),
                               borderRadius: BorderRadius.circular(30),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.8),
+                                color: Colors.white.withOpacity(0.8),
                               ),
                               boxShadow: const [
                                 BoxShadow(
@@ -248,7 +248,7 @@ class _LoginBackdrop extends StatelessWidget {
             width: 200,
             height: 200,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
+              color: AppColors.primary.withOpacity(0.12),
               shape: BoxShape.circle,
             ),
           ),
@@ -260,7 +260,7 @@ class _LoginBackdrop extends StatelessWidget {
             width: 190,
             height: 190,
             decoration: BoxDecoration(
-              color: AppColors.secondary.withValues(alpha: 0.09),
+              color: AppColors.secondary.withOpacity(0.09),
               shape: BoxShape.circle,
             ),
           ),
@@ -274,8 +274,8 @@ class _LoginBackdrop extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.primary.withValues(alpha: 0.16),
-                  AppColors.secondary.withValues(alpha: 0.08),
+                  AppColors.primary.withOpacity(0.16),
+                  AppColors.secondary.withOpacity(0.08),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -438,7 +438,7 @@ class _TrustChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.82),
+        color: Colors.white.withOpacity(0.82),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

@@ -259,7 +259,7 @@ class _AdoptionHero extends StatelessWidget {
         border: Border.all(color: AppColors.divider),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.08),
+            color: AppColors.primary.withOpacity(0.08),
             blurRadius: 22,
             offset: const Offset(0, 10),
           ),
@@ -271,7 +271,7 @@ class _AdoptionHero extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
+              color: AppColors.primary.withOpacity(0.12),
               borderRadius: BorderRadius.circular(999),
             ),
             child: const Text(
@@ -411,7 +411,7 @@ class _TypeFilterChip extends StatelessWidget {
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.25),
+                    color: AppColors.primary.withOpacity(0.25),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -449,7 +449,7 @@ class _AdoptionCard extends ConsumerWidget {
         border: Border.all(color: AppColors.divider),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
@@ -495,7 +495,7 @@ class _AdoptionCard extends ConsumerWidget {
                 Text(
                   adoption.description,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textPrimary.withValues(alpha: 0.78),
+                        color: AppColors.textPrimary.withOpacity(0.78),
                         height: 1.45,
                       ),
                   maxLines: 3,
@@ -678,7 +678,7 @@ class _AdoptedNotice extends StatelessWidget {
       width: double.infinity,
       height: 46,
       decoration: BoxDecoration(
-        color: AppColors.success.withValues(alpha: 0.12),
+        color: AppColors.success.withOpacity(0.12),
         borderRadius: BorderRadius.circular(16),
       ),
       alignment: Alignment.center,
@@ -992,7 +992,7 @@ class _AdoptionPhotoGalleryState extends State<_AdoptionPhotoGallery> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.55),
+                  color: Colors.black.withOpacity(0.55),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -1022,7 +1022,7 @@ class _AdoptionPhotoGalleryState extends State<_AdoptionPhotoGallery> {
                       decoration: BoxDecoration(
                         color: index == safeIndex
                             ? Colors.white
-                            : Colors.white.withValues(alpha: 0.45),
+                            : Colors.white.withOpacity(0.45),
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
@@ -1045,7 +1045,7 @@ class _ExpandIcon extends StatelessWidget {
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.45),
+        color: Colors.black.withOpacity(0.45),
         shape: BoxShape.circle,
       ),
       child:
@@ -1125,7 +1125,7 @@ class _PhotoViewerModalState extends State<_PhotoViewerModal> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.55),
+                    color: Colors.black.withOpacity(0.55),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.close_rounded, color: Colors.white),
@@ -1150,7 +1150,7 @@ class _PhotoViewerModalState extends State<_PhotoViewerModal> {
                       decoration: BoxDecoration(
                         color: i == _current
                             ? Colors.white
-                            : Colors.white.withValues(alpha: 0.4),
+                            : Colors.white.withOpacity(0.4),
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
@@ -1218,7 +1218,7 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.success.withValues(alpha: 0.12),
+        color: AppColors.success.withOpacity(0.12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(

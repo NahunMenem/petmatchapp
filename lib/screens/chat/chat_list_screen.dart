@@ -15,75 +15,146 @@ class ChatListScreen extends ConsumerWidget {
     final conversationsAsync = ref.watch(conversationsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mensajes')),
-      body: conversationsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (conversations) {
-          if (conversations.isEmpty) {
-            return const _EmptyConversations();
-          }
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF8F4F1), Color(0xFFF1F3F7)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: conversationsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text('Error: $e')),
+            data: (conversations) {
+              if (conversations.isEmpty) {
+                return const _EmptyConversations();
+              }
 
-          // Separate new matches from conversations
-          final newMatches = conversations
-              .where((c) => c.lastMessage == null)
-              .toList();
-          final withMessages = conversations
-              .where((c) => c.lastMessage != null)
-              .toList();
+              final newMatches = conversations
+                  .where((c) => c.lastMessage == null)
+                  .toList();
+              final withMessages = conversations
+                  .where((c) => c.lastMessage != null)
+                  .toList();
 
-          return ListView(
-            children: [
-              // New Matches section
-              if (newMatches.isNotEmpty) ...[
-                Padding(
-                  padding:
-                      const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Text(
-                    'Nuevos matches',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                ),
-                SizedBox(
-                  height: 100,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    itemCount: newMatches.length,
-                    itemBuilder: (_, i) =>
-                        _MatchAvatar(
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+                children: [
+                  const _ChatHero(),
+                  if (newMatches.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 18, 4, 10),
+                      child: Text(
+                        'Nuevos matches',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ),
+                    SizedBox(
+                      height: 108,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        itemCount: newMatches.length,
+                        itemBuilder: (_, i) => _MatchAvatar(
                           conversation: newMatches[i],
                           onTap: () => context.push(
                             '/chat/${newMatches[i].id}',
                             extra: newMatches[i],
                           ),
                         ),
+                      ),
+                    ),
+                  ],
+                  if (withMessages.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 18, 4, 10),
+                      child: Text(
+                        'Conversaciones',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ),
+                    ...withMessages.map(
+                      (c) => _ConversationTile(
+                        conversation: c,
+                        onTap: () => context.push('/chat/${c.id}', extra: c),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChatHero extends StatelessWidget {
+  const _ChatHero();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFE3D7), Color(0xFFFFF2EC)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 18,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: const BoxDecoration(
+              gradient: AppColors.matchGradient,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.forum_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Mensajes',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Divider(),
+                SizedBox(height: 4),
+                Text(
+                  'Segui la charla con tus matches y hacé que pase algo lindo.',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
-
-              // Conversations
-              if (withMessages.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: Text(
-                    'Conversaciones',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                ),
-              ...withMessages.map(
-                (c) => _ConversationTile(
-                  conversation: c,
-                  onTap: () => context.push('/chat/${c.id}', extra: c),
-                ),
-              ),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -180,82 +251,94 @@ class _ConversationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasUnread = conversation.unreadCount > 0;
 
-    return ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: Stack(
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: AppColors.surfaceVariant,
-            backgroundImage: conversation.petPhoto.isNotEmpty
-                ? CachedNetworkImageProvider(conversation.petPhoto)
-                : null,
-            child: conversation.petPhoto.isEmpty
-                ? const Icon(Icons.pets, color: AppColors.textHint)
-                : null,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 18,
+            offset: Offset(0, 10),
           ),
         ],
+        border: Border.all(
+          color: hasUnread ? const Color(0xFFFFD4C6) : const Color(0xFFF0F1F4),
+        ),
       ),
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(
-              '${conversation.petName} · ${conversation.otherUserName}',
-              style: TextStyle(
-                fontWeight:
-                    hasUnread ? FontWeight.w700 : FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
-          ),
-          if (conversation.lastMessageAt != null)
-            Text(
-              timeago.format(conversation.lastMessageAt!, locale: 'es'),
-              style: TextStyle(
-                fontSize: 11,
-                color: hasUnread
-                    ? AppColors.primary
-                    : AppColors.textHint,
-              ),
-            ),
-        ],
-      ),
-      subtitle: Row(
-        children: [
-          Expanded(
-            child: Text(
-              conversation.lastMessage ?? '',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: hasUnread
-                    ? AppColors.textPrimary
-                    : AppColors.textSecondary,
-                fontWeight:
-                    hasUnread ? FontWeight.w600 : FontWeight.w400,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          if (hasUnread)
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(10),
-              ),
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: CircleAvatar(
+          radius: 28,
+          backgroundColor: const Color(0xFFFFF3EE),
+          backgroundImage: conversation.petPhoto.isNotEmpty
+              ? CachedNetworkImageProvider(conversation.petPhoto)
+              : null,
+          child: conversation.petPhoto.isEmpty
+              ? const Icon(Icons.pets, color: AppColors.primary)
+              : null,
+        ),
+        title: Row(
+          children: [
+            Expanded(
               child: Text(
-                '${conversation.unreadCount}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
+                '${conversation.petName} · ${conversation.otherUserName}',
+                style: TextStyle(
+                  fontWeight: hasUnread ? FontWeight.w800 : FontWeight.w600,
+                  fontSize: 14,
                 ),
               ),
             ),
-        ],
+            if (conversation.lastMessageAt != null)
+              Text(
+                timeago.format(conversation.lastMessageAt!, locale: 'es'),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: hasUnread ? AppColors.primary : AppColors.textHint,
+                ),
+              ),
+          ],
+        ),
+        subtitle: Row(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  conversation.lastMessage ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: hasUnread
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary,
+                    fontWeight: hasUnread ? FontWeight.w600 : FontWeight.w400,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+            if (hasUnread)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  gradient: AppColors.matchGradient,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '${conversation.unreadCount}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

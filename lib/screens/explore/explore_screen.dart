@@ -286,7 +286,7 @@ class _ActionButton extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.25),
+              color: color.withOpacity(0.25),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -312,7 +312,7 @@ class _MatchOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black.withValues(alpha: 0.85),
+      color: Colors.black.withOpacity(0.85),
       child: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -333,7 +333,7 @@ class _MatchOverlay extends StatelessWidget {
             Text(
               'A ${pet.name} y a tu mascota les gustaron mutuamente',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.85),
+                color: Colors.white.withOpacity(0.85),
                 fontSize: 15,
               ),
               textAlign: TextAlign.center,
@@ -348,7 +348,7 @@ class _MatchOverlay extends StatelessWidget {
                 border: Border.all(color: AppColors.primary, width: 4),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.4),
+                    color: AppColors.primary.withOpacity(0.4),
                     blurRadius: 24,
                   ),
                 ],
@@ -391,7 +391,7 @@ class _MatchOverlay extends StatelessWidget {
                     child: Text(
                       'Seguir explorando',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: Colors.white.withOpacity(0.7),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -775,7 +775,7 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
           ),
           const SizedBox(height: 18),
           DropdownButtonFormField<String?>(
-            initialValue: typeValue,
+            value: typeValue,
             decoration: const InputDecoration(
               labelText: 'Tipo de mascota',
               prefixIcon: Icon(Icons.pets_outlined),
@@ -807,7 +807,7 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
-            initialValue: _selectedBreed.isEmpty ? '' : _selectedBreed,
+            value: _selectedBreed.isEmpty ? '' : _selectedBreed,
             decoration: const InputDecoration(
               labelText: 'Raza',
               prefixIcon: Icon(Icons.biotech_outlined),
@@ -832,7 +832,7 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String?>(
-            initialValue: _selectedSex,
+            value: _selectedSex,
             decoration: const InputDecoration(
               labelText: 'Sexo',
               prefixIcon: Icon(Icons.wc_rounded),

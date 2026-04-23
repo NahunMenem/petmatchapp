@@ -9,6 +9,8 @@ import '../../providers/chat_provider.dart';
 import '../../providers/patitas_provider.dart';
 import '../../providers/pets_provider.dart';
 import '../../services/push_notification_service.dart';
+import '../../services/storage_service.dart';
+import '../../widgets/home_intro_dialog.dart';
 import '../explore/explore_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../adoption/adoption_screen.dart';
@@ -27,6 +29,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final Set<int> _loadedTabs = {0};
   bool _checkedWelcomePermissions = false;
+  bool _checkedIntroModal = false;
 
   static const _screens = [
     ExploreScreen(),
@@ -40,8 +43,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeShowIntroModal();
       _maybeShowPermissionsPrompt();
     });
+  }
+
+  Future<void> _maybeShowIntroModal() async {
+    if (!mounted || _checkedIntroModal) return;
+    _checkedIntroModal = true;
+
+    final seenIntro = await StorageService.getHomeIntroSeen();
+    if (!mounted || seenIntro) return;
+
+    await showHomeIntroDialog(context);
   }
 
   Future<void> _maybeShowPermissionsPrompt() async {
@@ -445,7 +459,7 @@ class _NavChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.primary.withValues(alpha: 0.1),
+      color: AppColors.primary.withOpacity(0.1),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),

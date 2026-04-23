@@ -11,6 +11,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/patitas_provider.dart';
 import '../../providers/pets_provider.dart';
+import '../../widgets/home_intro_dialog.dart';
 import 'paw_points_screen.dart';
 import 'pet_detail_screen.dart';
 
@@ -110,7 +111,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         Text(
                           user!.location!,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color: Colors.white.withOpacity(0.8),
                             fontSize: 13,
                           ),
                         ),
@@ -213,6 +214,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   icon: Icons.notifications_outlined,
                   label: 'Notificaciones',
                   onTap: () => context.push('/notifications'),
+                ),
+                _OptionTile(
+                  icon: Icons.slideshow_rounded,
+                  label: 'Cómo funciona PawMatch',
+                  onTap: () => showHomeIntroDialog(context),
                 ),
                 _OptionTile(
                   icon: Icons.logout_outlined,
@@ -390,7 +396,7 @@ class _LikesTile extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.25),
+                color: AppColors.primary.withOpacity(0.25),
               ),
             ),
             child: Row(
@@ -399,7 +405,7 @@ class _LikesTile extends StatelessWidget {
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(
@@ -422,7 +428,7 @@ class _LikesTile extends StatelessWidget {
                   height: 32,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   alignment: Alignment.center,
@@ -525,8 +531,8 @@ class _PetListTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: pet.isActive
-                    ? AppColors.success.withValues(alpha: 0.12)
-                    : AppColors.textHint.withValues(alpha: 0.15),
+                    ? AppColors.success.withOpacity(0.12)
+                    : AppColors.textHint.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -587,7 +593,7 @@ class _OptionTile extends StatelessWidget {
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                    color: (color ?? AppColors.primary).withValues(alpha: 0.1),
+                    color: (color ?? AppColors.primary).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(icon, color: color ?? AppColors.primary),
