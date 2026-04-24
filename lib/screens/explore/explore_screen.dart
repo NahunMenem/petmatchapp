@@ -220,7 +220,10 @@ class _SwipeView extends StatelessWidget {
               backCardOffset: const Offset(0, -16),
               padding: const EdgeInsets.only(top: 8, bottom: 8),
               cardBuilder: (context, index, realIndex, count) {
-                return PetCard(pet: pets[index]);
+                return PetCard(
+                  key: ValueKey(pets[index].id),
+                  pet: pets[index],
+                );
               },
             ),
           ),

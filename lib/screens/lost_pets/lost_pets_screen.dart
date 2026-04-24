@@ -628,6 +628,19 @@ class _LostPetCard extends StatelessWidget {
     this.onEdit,
   });
 
+  void _openViewer(BuildContext context, List<String> photos, int initialIndex) {
+    final safeInitialIndex =
+        photos.isEmpty ? 0 : initialIndex.clamp(0, photos.length - 1);
+    showDialog(
+      context: context,
+      barrierColor: Colors.black,
+      builder: (_) => _LostPetPhotoViewerModal(
+        photos: photos,
+        initialIndex: safeInitialIndex,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -650,18 +663,45 @@ class _LostPetCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Foto
-            ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: SizedBox(
-                width: 76,
-                height: 76,
-                child: pet.photoUrl != null
-                    ? Image.network(
-                        pet.photoUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _petPlaceholder(),
-                      )
-                    : _petPlaceholder(),
+            GestureDetector(
+              onTap: pet.photos.isEmpty
+                  ? null
+                  : () => _openViewer(context, pet.photos, 0),
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: SizedBox(
+                      width: 76,
+                      height: 76,
+                      child: pet.photoUrl != null
+                          ? Image.network(
+                              pet.photoUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _petPlaceholder(),
+                            )
+                          : _petPlaceholder(),
+                    ),
+                  ),
+                  if (pet.photos.isNotEmpty)
+                    Positioned(
+                      right: 6,
+                      bottom: 6,
+                      child: Container(
+                        width: 26,
+                        height: 26,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.45),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.fullscreen_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(width: 12),
@@ -846,6 +886,118 @@ class _LostPetCard extends StatelessWidget {
 
   String _normalizePhone(String phone) {
     return phone.replaceAll(RegExp(r'[^0-9]'), '');
+  }
+}
+
+class _LostPetPhotoViewerModal extends StatefulWidget {
+  final List<String> photos;
+  final int initialIndex;
+
+  const _LostPetPhotoViewerModal({
+    required this.photos,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_LostPetPhotoViewerModal> createState() =>
+      _LostPetPhotoViewerModalState();
+}
+
+class _LostPetPhotoViewerModalState extends State<_LostPetPhotoViewerModal> {
+  late final PageController _controller;
+  late int _current;
+
+  int get _safeInitialIndex {
+    if (widget.photos.isEmpty) return 0;
+    return widget.initialIndex.clamp(0, widget.photos.length - 1);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _current = _safeInitialIndex;
+    _controller = PageController(initialPage: _safeInitialIndex);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog.fullscreen(
+      backgroundColor: Colors.black,
+      child: SafeArea(
+        child: Stack(
+          children: [
+            PageView.builder(
+              controller: _controller,
+              itemCount: widget.photos.length,
+              onPageChanged: (index) => setState(() => _current = index),
+              itemBuilder: (context, index) {
+                return InteractiveViewer(
+                  minScale: 0.8,
+                  maxScale: 4.0,
+                  child: Center(
+                    child: Image.network(
+                      widget.photos[index],
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.broken_image_outlined,
+                        color: Colors.white38,
+                        size: 64,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.55),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close_rounded, color: Colors.white),
+                ),
+              ),
+            ),
+            if (widget.photos.length > 1)
+              Positioned(
+                bottom: 16,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    widget.photos.length,
+                    (index) => AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: index == _current ? 18 : 7,
+                      height: 7,
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      decoration: BoxDecoration(
+                        color: index == _current
+                            ? Colors.white
+                            : Colors.white.withOpacity(0.45),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

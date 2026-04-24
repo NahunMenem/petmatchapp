@@ -514,15 +514,16 @@ class _PetListTile extends StatelessWidget {
       ),
       child: ListTile(
         onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        minLeadingWidth: 86,
         leading: Stack(
           clipBehavior: Clip.none,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               child: SizedBox(
-                width: 52,
-                height: 52,
+                width: 68,
+                height: 68,
                 child: pet.mainPhoto.isNotEmpty
                     ? CachedNetworkImage(
                         imageUrl: pet.mainPhoto,
@@ -530,7 +531,11 @@ class _PetListTile extends StatelessWidget {
                       )
                     : Container(
                         color: AppColors.surfaceVariant,
-                        child: const Icon(Icons.pets, color: AppColors.textHint),
+                        child: const Icon(
+                          Icons.pets,
+                          color: AppColors.textHint,
+                          size: 28,
+                        ),
                       ),
               ),
             ),
@@ -539,8 +544,8 @@ class _PetListTile extends StatelessWidget {
                 right: -4,
                 top: -4,
                 child: Container(
-                  width: 16,
-                  height: 16,
+                  width: 18,
+                  height: 18,
                   decoration: BoxDecoration(
                     color: AppColors.success,
                     shape: BoxShape.circle,
@@ -550,47 +555,61 @@ class _PetListTile extends StatelessWidget {
               ),
           ],
         ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                pet.name,
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
-            if (pet.isActive)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Text(
-                  'Activa ahora',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.success,
-                  ),
-                ),
-              ),
-          ],
+        title: Text(
+          pet.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 17,
+          ),
         ),
         subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
+          padding: const EdgeInsets.only(top: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('${pet.breed} · ${pet.age}'),
-              const SizedBox(height: 4),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (pet.isActive)
+                    const _PetStatusChip(
+                      label: 'Activa ahora',
+                      backgroundColor: Color(0x1F27AE60),
+                      textColor: AppColors.success,
+                    ),
+                  _PetStatusChip(
+                    label: pet.isActive ? 'Buscando pareja' : 'Pausada',
+                    backgroundColor: pet.isActive
+                        ? const Color(0x1F27AE60)
+                        : AppColors.textHint.withValues(alpha: 0.14),
+                    textColor:
+                        pet.isActive ? AppColors.success : AppColors.textSecondary,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${pet.breed} - ${pet.age}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textPrimary,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 6),
               Text(
                 pet.isActive
                     ? 'Es la mascota visible en Explorar y Matches.'
                     : 'Pausada para buscar pareja.',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
+                  height: 1.3,
                   color:
                       pet.isActive ? AppColors.success : AppColors.textSecondary,
                 ),
@@ -598,36 +617,45 @@ class _PetListTile extends StatelessWidget {
             ],
           ),
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: pet.isActive
-                    ? AppColors.success.withOpacity(0.12)
-                    : AppColors.textHint.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                pet.isActive ? 'Buscando pareja' : 'Pausada',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color:
-                      pet.isActive ? AppColors.success : AppColors.textSecondary,
-                ),
-              ),
-            ),
-            IconButton(
-              tooltip: 'Eliminar mascota',
-              onPressed: onDelete,
-              icon: const Icon(
-                Icons.delete_outline_rounded,
-                color: AppColors.error,
-              ),
-            ),
-          ],
+        trailing: IconButton(
+          tooltip: 'Eliminar mascota',
+          visualDensity: VisualDensity.compact,
+          onPressed: onDelete,
+          icon: const Icon(
+            Icons.delete_outline_rounded,
+            color: AppColors.error,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PetStatusChip extends StatelessWidget {
+  final String label;
+  final Color backgroundColor;
+  final Color textColor;
+
+  const _PetStatusChip({
+    required this.label,
+    required this.backgroundColor,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: textColor,
         ),
       ),
     );

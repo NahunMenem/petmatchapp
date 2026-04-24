@@ -17,6 +17,20 @@ class _PetCardState extends State<PetCard> {
   int _currentPhoto = 0;
 
   @override
+  void didUpdateWidget(covariant PetCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.pet.id != widget.pet.id) {
+      _currentPhoto = 0;
+      return;
+    }
+
+    final photoCount = widget.pet.photos.isNotEmpty ? widget.pet.photos.length : 1;
+    if (_currentPhoto >= photoCount) {
+      _currentPhoto = 0;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final pet = widget.pet;
     final distanceLabel = pet.distanceLabel;
