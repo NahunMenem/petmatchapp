@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
@@ -22,7 +21,6 @@ class ExploreScreen extends ConsumerStatefulWidget {
 }
 
 class _ExploreScreenState extends ConsumerState<ExploreScreen> {
-  final CardSwiperController _swiperController = CardSwiperController();
   bool _askedLocation = false;
 
   @override
@@ -31,12 +29,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadCurrentLocation();
     });
-  }
-
-  @override
-  void dispose() {
-    _swiperController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadCurrentLocation() async {
@@ -143,16 +135,15 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               }
               return _SwipeView(
                 pets: pets,
-                controller: _swiperController,
                 onSuperLike: _sendSuperLike,
                 onDislike: () {
                   ref.read(exploreProvider.notifier).dislikeCurrentPet();
                 },
-                onSwipe: (index, _, direction) {
-                  if (direction == CardSwiperDirection.right) {
-                    ref.read(exploreProvider.notifier).likeCurrentPet();
-                  }
-                  return true;
+                onLike: () {
+                  ref.read(exploreProvider.notifier).likeCurrentPet();
+                },
+                onSkip: () {
+                  ref.read(exploreProvider.notifier).removeCurrent();
                 },
               );
             },
@@ -189,42 +180,51 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
 
 class _SwipeView extends StatelessWidget {
   final List<PetModel> pets;
-  final CardSwiperController controller;
-  final CardSwiperOnSwipe onSwipe;
   final VoidCallback onSuperLike;
   final VoidCallback onDislike;
+  final VoidCallback onLike;
+  final VoidCallback onSkip;
 
   const _SwipeView({
     required this.pets,
-    required this.controller,
-    required this.onSwipe,
     required this.onSuperLike,
     required this.onDislike,
+    required this.onLike,
+    required this.onSkip,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Swiper
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: CardSwiper(
-              controller: controller,
-              cardsCount: pets.length,
-              onSwipe: onSwipe,
-              allowedSwipeDirection:
-                  const AllowedSwipeDirection.only(right: true),
-              numberOfCardsDisplayed: pets.length == 1 ? 1 : 2,
-              backCardOffset: const Offset(0, -16),
-              padding: const EdgeInsets.only(top: 8, bottom: 8),
-              cardBuilder: (context, index, realIndex, count) {
-                return PetCard(
-                  key: ValueKey(pets[index].id),
-                  pet: pets[index],
-                );
-              },
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (pets.length > 1)
+                  Transform.translate(
+                    offset: const Offset(0, -16),
+                    child: Transform.scale(
+                      scale: 0.94,
+                      child: PetCard(
+                        key: ValueKey('next-${pets[1].id}'),
+                        pet: pets[1],
+                      ),
+                    ),
+                  ),
+                Dismissible(
+                  key: ValueKey('current-${pets.first.id}'),
+                  direction: DismissDirection.horizontal,
+                  resizeDuration: null,
+                  movementDuration: const Duration(milliseconds: 180),
+                  onDismissed: (_) => onSkip(),
+                  child: PetCard(
+                    pet: pets.first,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -254,7 +254,7 @@ class _SwipeView extends StatelessWidget {
                 icon: Icons.favorite_rounded,
                 color: AppColors.likeGreen,
                 size: 52,
-                onTap: () => controller.swipe(CardSwiperDirection.right),
+                onTap: onLike,
               ),
             ],
           ),
@@ -736,14 +736,12 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
 
   String? _selectedType;
   String _selectedBreed = '';
-  String? _selectedSex;
 
   @override
   void initState() {
     super.initState();
     _selectedType = ref.read(exploreTypeProvider);
     _selectedBreed = ref.read(exploreBreedProvider);
-    _selectedSex = ref.read(exploreSexProvider);
   }
 
   @override
@@ -834,31 +832,6 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
             },
           ),
           const SizedBox(height: 16),
-          DropdownButtonFormField<String?>(
-            value: _selectedSex,
-            decoration: const InputDecoration(
-              labelText: 'Sexo',
-              prefixIcon: Icon(Icons.wc_rounded),
-            ),
-            items: const [
-              DropdownMenuItem<String?>(
-                value: null,
-                child: Text('Todos'),
-              ),
-              DropdownMenuItem<String?>(
-                value: 'male',
-                child: Text('Macho'),
-              ),
-              DropdownMenuItem<String?>(
-                value: 'female',
-                child: Text('Hembra'),
-              ),
-            ],
-            onChanged: (value) {
-              setState(() => _selectedSex = value);
-            },
-          ),
-          const SizedBox(height: 16),
           Row(
             children: [
               const Icon(Icons.map_outlined, color: AppColors.primary),
@@ -904,7 +877,6 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
                 ref.read(exploreTypeProvider.notifier).state = _selectedType;
                 ref.read(exploreBreedProvider.notifier).state =
                     _selectedBreed;
-                ref.read(exploreSexProvider.notifier).state = _selectedSex;
                 ref.invalidate(exploreProvider);
                 Navigator.pop(context);
               },
@@ -916,11 +888,9 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
               setState(() {
                 _selectedType = null;
                 _selectedBreed = '';
-                _selectedSex = null;
               });
               ref.read(exploreTypeProvider.notifier).state = null;
               ref.read(exploreBreedProvider.notifier).state = '';
-              ref.read(exploreSexProvider.notifier).state = null;
               ref.read(exploreMaxDistanceProvider.notifier).state = 10;
               ref.read(exploreVaccinatedOnlyProvider.notifier).state = false;
               ref.read(exploreSterilizedOnlyProvider.notifier).state = false;

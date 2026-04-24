@@ -15,6 +15,9 @@ import 'screens/notifications/notifications_screen.dart';
 import 'screens/likes/received_likes_screen.dart';
 import 'screens/profile/paw_points_screen.dart';
 import 'screens/profile/referrals_screen.dart';
+import 'screens/shops/shops_screen.dart';
+import 'screens/shops/shop_detail_screen.dart';
+import 'models/shop_model.dart';
 import 'services/push_notification_service.dart';
 
 final _routerProvider = Provider<GoRouter>((ref) {
@@ -94,6 +97,17 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/referrals',
         builder: (_, __) => const ReferralsScreen(),
+      ),
+      GoRoute(
+        path: '/shops',
+        builder: (_, __) => const ShopsScreen(),
+      ),
+      GoRoute(
+        path: '/shops/:shopId',
+        builder: (context, state) {
+          final shop = state.extra as ShopModel;
+          return ShopDetailScreen(shop: shop);
+        },
       ),
     ],
   );

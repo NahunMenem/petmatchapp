@@ -418,23 +418,23 @@ class _MapPlaceholderState extends State<_MapPlaceholder> {
   Future<BitmapDescriptor> _buildPetMarker(String label, Color color) async {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
-    const size = Size(164, 134);
-    final center = Offset(size.width / 2, 38);
+    const size = Size(132, 108);
+    final center = Offset(size.width / 2, 32);
     final paint = Paint()..isAntiAlias = true;
 
     paint.color = color.withOpacity(0.28);
-    canvas.drawCircle(center.translate(0, 7), 34, paint);
+    canvas.drawCircle(center.translate(0, 6), 28, paint);
 
     paint.color = color;
-    canvas.drawCircle(center, 30, paint);
+    canvas.drawCircle(center, 24, paint);
 
     paint.color = Colors.white;
-    canvas.drawCircle(center.translate(-12, -5), 5, paint);
-    canvas.drawCircle(center.translate(-4, -13), 5, paint);
-    canvas.drawCircle(center.translate(6, -13), 5, paint);
-    canvas.drawCircle(center.translate(14, -5), 5, paint);
+    canvas.drawCircle(center.translate(-10, -4), 4.2, paint);
+    canvas.drawCircle(center.translate(-3, -11), 4.2, paint);
+    canvas.drawCircle(center.translate(5, -11), 4.2, paint);
+    canvas.drawCircle(center.translate(12, -4), 4.2, paint);
     canvas.drawOval(
-      Rect.fromCenter(center: center.translate(1, 8), width: 27, height: 22),
+      Rect.fromCenter(center: center.translate(1, 7), width: 22, height: 18),
       paint,
     );
 
@@ -443,30 +443,30 @@ class _MapPlaceholderState extends State<_MapPlaceholder> {
         text: label,
         style: const TextStyle(
           color: AppColors.textPrimary,
-          fontSize: 22,
+          fontSize: 17,
           fontWeight: FontWeight.w900,
         ),
       ),
       textDirection: TextDirection.ltr,
-    )..layout(maxWidth: size.width - 20);
+    )..layout(maxWidth: size.width - 18);
 
-    final labelWidth = textPainter.width + 28;
+    final labelWidth = textPainter.width + 22;
     final labelRect = RRect.fromRectAndRadius(
       Rect.fromLTWH(
         (size.width - labelWidth) / 2,
-        73,
+        60,
         labelWidth,
-        42,
+        34,
       ),
-      const Radius.circular(12),
+      const Radius.circular(10),
     );
     paint.color = Colors.black.withOpacity(0.12);
-    canvas.drawRRect(labelRect.shift(const Offset(0, 4)), paint);
+    canvas.drawRRect(labelRect.shift(const Offset(0, 3)), paint);
     paint.color = Colors.white;
     canvas.drawRRect(labelRect, paint);
     textPainter.paint(
       canvas,
-      Offset((size.width - textPainter.width) / 2, 81),
+      Offset((size.width - textPainter.width) / 2, 67),
     );
 
     final image = await recorder.endRecording().toImage(
@@ -480,16 +480,16 @@ class _MapPlaceholderState extends State<_MapPlaceholder> {
   Future<BitmapDescriptor> _buildLocationMarker() async {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
-    const size = Size(48, 48);
+    const size = Size(38, 38);
     final center = Offset(size.width / 2, size.height / 2);
     final paint = Paint()..isAntiAlias = true;
 
     paint.color = AppColors.info.withOpacity(0.24);
-    canvas.drawCircle(center, 19, paint);
+    canvas.drawCircle(center, 15, paint);
     paint.color = Colors.white;
-    canvas.drawCircle(center, 13, paint);
+    canvas.drawCircle(center, 10, paint);
     paint.color = AppColors.info;
-    canvas.drawCircle(center, 8, paint);
+    canvas.drawCircle(center, 6, paint);
 
     final image = await recorder.endRecording().toImage(
           size.width.toInt(),
@@ -570,7 +570,7 @@ class _EmptyLostPets extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.all(24),
         child: Text(
-          'Todavia no hay mascotas perdidas reportadas.',
+          'Todavia no hay mascotas perdidas cerca de tu zona.',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: AppColors.textSecondary,
@@ -1088,15 +1088,22 @@ class _AlertReach {
 const _alertReach2km = _AlertReach(
   title: 'Notificar a 2 km',
   subtitle: 'Ideal si se perdio cerca de tu zona',
-  cost: 30,
+  cost: 50,
   radiusKm: 2,
 );
 
 const _alertReach5km = _AlertReach(
   title: 'Notificar a 5 km',
   subtitle: 'Mas alcance para casos urgentes',
-  cost: 50,
+  cost: 100,
   radiusKm: 5,
+);
+
+const _alertReach10km = _AlertReach(
+  title: 'Notificar a 10 km',
+  subtitle: 'Maximo alcance para casos muy urgentes',
+  cost: 200,
+  radiusKm: 10,
 );
 
 class _ReportSheetState extends ConsumerState<_ReportSheet> {
@@ -2165,6 +2172,13 @@ class _AlertReachSection extends StatelessWidget {
             disabled: availablePatitas < _alertReach5km.cost,
             onTap: () => onSelected(_alertReach5km),
           ),
+          const SizedBox(height: 8),
+          _AlertReachOption(
+            reach: _alertReach10km,
+            selected: selectedReach == _alertReach10km,
+            disabled: availablePatitas < _alertReach10km.cost,
+            onTap: () => onSelected(_alertReach10km),
+          ),
         ],
       ),
     );
@@ -2223,6 +2237,12 @@ void _showAlertReachInfo(BuildContext context) {
                 'Amplia el alcance para que mas personas cercanas vean la alerta y puedan ayudarte dentro de un radio de hasta 5 km.',
           ),
           const SizedBox(height: 12),
+          const _InfoRow(
+            title: 'Notificar a 10 km',
+            text:
+                'Activa el alcance maximo para avisar a muchas mas personas de la comunidad dentro de un radio de hasta 10 km.',
+          ),
+          const SizedBox(height: 12),
           const Text(
             'Si no activas una opcion con Patitas, la alerta se publica normalmente en Perdidos pero no se envian notificaciones a usuarios cercanos.',
             style: TextStyle(
@@ -2234,7 +2254,7 @@ void _showAlertReachInfo(BuildContext context) {
           ),
           const SizedBox(height: 10),
           const Text(
-            'Las Patitas se descuentan solo cuando publicas la alerta con alcance de 2 km o 5 km.',
+            'Las Patitas se descuentan solo cuando publicas la alerta con alcance de 2 km, 5 km o 10 km.',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 13,

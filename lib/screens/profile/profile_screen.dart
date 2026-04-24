@@ -212,6 +212,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onTap: () => context.push('/notifications'),
                 ),
                 _OptionTile(
+                  icon: Icons.storefront_outlined,
+                  label: 'Tiendas y servicios',
+                  onTap: () => context.push('/shops'),
+                ),
+                _OptionTile(
                   icon: Icons.slideshow_rounded,
                   label: 'Como funciona PawMatch',
                   onTap: () => showHomeIntroDialog(context),

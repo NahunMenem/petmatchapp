@@ -26,7 +26,6 @@ class PetService {
   Future<List<PetModel>> getExplorePets({
     String? type,
     String? breed,
-    String? sex,
     bool vaccinatedOnly = false,
     bool sterilizedOnly = false,
     double? lat,
@@ -39,7 +38,6 @@ class PetService {
       queryParams: {
         if (type != null) 'type': type,
         if (breed != null && breed.trim().isNotEmpty) 'breed': breed.trim(),
-        if (sex != null && sex.trim().isNotEmpty) 'sex': sex.trim(),
         if (vaccinatedOnly) 'vaccinated': true,
         if (sterilizedOnly) 'sterilized': true,
         if (lat != null) 'lat': lat,

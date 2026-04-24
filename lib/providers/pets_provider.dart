@@ -22,7 +22,6 @@ final exploreLocationProvider = StateProvider<ExploreLocation?>((ref) => null);
 final exploreMaxDistanceProvider = StateProvider<int>((ref) => 10);
 final exploreTypeProvider = StateProvider<String?>((ref) => null);
 final exploreBreedProvider = StateProvider<String>((ref) => '');
-final exploreSexProvider = StateProvider<String?>((ref) => null);
 final exploreVaccinatedOnlyProvider = StateProvider<bool>((ref) => false);
 final exploreSterilizedOnlyProvider = StateProvider<bool>((ref) => false);
 
@@ -41,7 +40,6 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
     ref.watch(exploreMaxDistanceProvider);
     ref.watch(exploreTypeProvider);
     ref.watch(exploreBreedProvider);
-    ref.watch(exploreSexProvider);
     ref.watch(exploreVaccinatedOnlyProvider);
     ref.watch(exploreSterilizedOnlyProvider);
     ref.watch(
@@ -57,7 +55,6 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
     final maxDistanceKm = ref.read(exploreMaxDistanceProvider);
     final type = ref.read(exploreTypeProvider);
     final breed = ref.read(exploreBreedProvider);
-    final sex = ref.read(exploreSexProvider);
     final vaccinatedOnly = ref.read(exploreVaccinatedOnlyProvider);
     final sterilizedOnly = ref.read(exploreSterilizedOnlyProvider);
     final advancedFiltersActive =
@@ -68,7 +65,6 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
     final pets = await service.getExplorePets(
       type: type,
       breed: breed,
-      sex: sex,
       vaccinatedOnly: vaccinatedOnly,
       sterilizedOnly: sterilizedOnly,
       lat: location?.latitude,

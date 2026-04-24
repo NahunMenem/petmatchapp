@@ -50,6 +50,10 @@ class ApiConstants {
       '/patitas/advanced-filters/activate';
   static const String createPatitasPreference = '/crear-preferencia';
 
+  // Shops
+  static const String shopsCercanos = '/shops/cercanos';
+  static const String shopsDetail = '/shops'; // append /{id}
+
   // Upload
   static const String upload = '/upload/photo';
 
