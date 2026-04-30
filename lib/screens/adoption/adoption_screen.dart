@@ -138,10 +138,12 @@ class _AdoptionScreenState extends ConsumerState<AdoptionScreen> {
                 children: [
                   _TypeFilterChip(
                     label: 'Todos',
-                    selected: filters.type == null,
+                    selected: filters.type == null &&
+                        filters.maxDistanceKm == 15 &&
+                        filters.size == null,
                     onTap: () => ref
                         .read(adoptionFiltersProvider.notifier)
-                        .update((s) => s.copyWith(clearType: true)),
+                        .state = const AdoptionFilters(),
                   ),
                   const SizedBox(width: 8),
                   _TypeFilterChip(
@@ -161,7 +163,7 @@ class _AdoptionScreenState extends ConsumerState<AdoptionScreen> {
                   ),
                   const SizedBox(width: 8),
                   _TypeFilterChip(
-                    label: '📍 Cerca mío',
+                    label: '📍 Hasta 5 km',
                     selected: filters.maxDistanceKm <= 5,
                     onTap: () => ref
                         .read(adoptionFiltersProvider.notifier)
@@ -1627,42 +1629,12 @@ class _FiltersSheetState extends State<_FiltersSheet> {
             ),
           ),
           const SizedBox(height: 12),
-          Text('Edad', style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: ['Cachorro', 'Joven', 'Adulto', 'Senior'].map((age) {
-              final ageKey = age.toLowerCase();
-              final selected = _filters.age == ageKey;
-              return FilterChip(
-                label: Text(age),
-                labelStyle: TextStyle(
-                  color: selected ? AppColors.primary : AppColors.textSecondary,
-                  fontWeight: FontWeight.w700,
-                ),
-                backgroundColor: Colors.white,
-                selectedColor: AppColors.primary.withOpacity(0.14),
-                side: BorderSide(
-                  color: selected ? AppColors.primary : AppColors.divider,
-                ),
-                checkmarkColor: AppColors.primary,
-                selected: selected,
-                onSelected: (selected) => setState(
-                  () => _filters = _filters.copyWith(
-                    age: selected ? ageKey : null,
-                    clearAge: !selected,
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 12),
-          Text('Tamano', style: Theme.of(context).textTheme.titleSmall),
+          Text('Tamaño', style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             children: [
-              ('Pequeno', 'small'),
+              ('Pequeño', 'small'),
               ('Mediano', 'medium'),
               ('Grande', 'large'),
             ].map((entry) {

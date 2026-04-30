@@ -8,29 +8,24 @@ final adoptionServiceProvider =
 class AdoptionFilters {
   final String? type; // 'dog' | 'cat' | null = all
   final int maxDistanceKm;
-  final String? age;
   final String? size;
 
   const AdoptionFilters({
     this.type,
     this.maxDistanceKm = 15,
-    this.age,
     this.size,
   });
 
   AdoptionFilters copyWith({
     String? type,
     int? maxDistanceKm,
-    String? age,
     String? size,
     bool clearType = false,
-    bool clearAge = false,
     bool clearSize = false,
   }) {
     return AdoptionFilters(
       type: clearType ? null : (type ?? this.type),
       maxDistanceKm: maxDistanceKm ?? this.maxDistanceKm,
-      age: clearAge ? null : (age ?? this.age),
       size: clearSize ? null : (size ?? this.size),
     );
   }
@@ -59,7 +54,6 @@ final adoptionsProvider = FutureProvider<List<AdoptionModel>>((ref) async {
   return service.getAdoptions(
     type: filters.type,
     maxDistanceKm: filters.maxDistanceKm,
-    age: filters.age,
     size: filters.size,
     latitude: location?.latitude,
     longitude: location?.longitude,

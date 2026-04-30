@@ -8,7 +8,6 @@ class AdoptionService {
   Future<List<AdoptionModel>> getAdoptions({
     String? type,
     int? maxDistanceKm,
-    String? age,
     String? size,
     double? latitude,
     double? longitude,
@@ -19,7 +18,6 @@ class AdoptionService {
       queryParams: {
         if (type != null) 'type': type,
         if (maxDistanceKm != null) 'max_distance': maxDistanceKm,
-        if (age != null) 'age': age,
         if (size != null) 'size': size,
         if (latitude != null) 'lat': latitude,
         if (longitude != null) 'lng': longitude,
