@@ -81,7 +81,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
     final center = Offset(size.width / 2, 32);
     final paint = Paint()..isAntiAlias = true;
 
-    paint.color = color.withValues(alpha: 0.28);
+    paint.color = color.withOpacity(0.28);
     canvas.drawCircle(center.translate(0, 6), 28, paint);
 
     paint.color = color;
@@ -95,8 +95,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
     final handlePath = Path()
       ..moveTo(center.dx - 7, center.dy - 7)
       ..arcTo(
-        Rect.fromCenter(
-            center: center.translate(0, -9), width: 14, height: 8),
+        Rect.fromCenter(center: center.translate(0, -9), width: 14, height: 8),
         3.14,
         3.14,
         false,
@@ -128,7 +127,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
       ),
       const Radius.circular(10),
     );
-    paint.color = Colors.black.withValues(alpha: 0.12);
+    paint.color = Colors.black.withOpacity(0.12);
     canvas.drawRRect(labelRect.shift(const Offset(0, 3)), paint);
     paint.color = Colors.white;
     canvas.drawRRect(labelRect, paint);
@@ -249,7 +248,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                       border: Border.all(color: AppColors.divider),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: Colors.black.withOpacity(0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 3),
                         ),
@@ -268,8 +267,8 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF22C55E)
-                                      .withValues(alpha: 0.12),
+                                  color:
+                                      const Color(0xFF22C55E).withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: const Row(
@@ -464,7 +463,7 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
+              color: Colors.black.withOpacity(0.08),
               blurRadius: 16,
               offset: const Offset(0, -4),
             ),
@@ -567,7 +566,7 @@ class _TipoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(

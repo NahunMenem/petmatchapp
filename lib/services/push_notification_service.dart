@@ -38,6 +38,7 @@ class PushNotificationService {
     if (_firebaseReady) return true;
     try {
       await Firebase.initializeApp();
+      await _messaging.setAutoInitEnabled(true);
       _firebaseReady = true;
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
       return true;
@@ -87,7 +88,11 @@ class PushNotificationService {
       return;
     }
 
-    final token = await _messaging.getToken();
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      await _waitForApnsToken();
+    }
+
+    final token = await _getFcmTokenWithRetry();
     if (token != null) {
       await _sendToken(token);
     }
@@ -96,6 +101,27 @@ class PushNotificationService {
     _tokenSubscription = _messaging.onTokenRefresh.listen((newToken) {
       unawaited(_sendToken(newToken));
     });
+  }
+
+  Future<void> _waitForApnsToken() async {
+    for (var attempt = 0; attempt < 10; attempt++) {
+      final apnsToken = await _messaging.getAPNSToken();
+      if (apnsToken != null && apnsToken.isNotEmpty) {
+        return;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    }
+  }
+
+  Future<String?> _getFcmTokenWithRetry() async {
+    for (var attempt = 0; attempt < 5; attempt++) {
+      final token = await _messaging.getToken();
+      if (token != null && token.isNotEmpty) {
+        return token;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    }
+    return null;
   }
 
   Future<void> unregisterDevice() async {

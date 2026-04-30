@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -454,10 +455,10 @@ class _AdoptionCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.divider.withValues(alpha: 0.75)),
+        border: Border.all(color: AppColors.divider.withOpacity(0.75)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.07),
+            color: Colors.black.withOpacity(0.07),
             blurRadius: 28,
             offset: const Offset(0, 14),
           ),
@@ -512,7 +513,7 @@ class _AdoptionCard extends ConsumerWidget {
                 Text(
                   adoption.description,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textPrimary.withValues(alpha: 0.78),
+                        color: AppColors.textPrimary.withOpacity(0.78),
                         height: 1.45,
                         fontWeight: FontWeight.w500,
                       ),
@@ -541,7 +542,7 @@ class _AdoptionCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 14),
                 _ShareAdoptionButton(
-                  onTap: () => _shareAdoption(adoption),
+                  onTap: () => _shareAdoption(context, adoption),
                 ),
                 const SizedBox(height: 14),
                 if (isOwner)
@@ -686,21 +687,34 @@ class _AdoptionCard extends ConsumerWidget {
     }
   }
 
-  Future<void> _shareAdoption(AdoptionModel adoption) async {
+  Future<void> _shareAdoption(
+    BuildContext context,
+    AdoptionModel adoption,
+  ) async {
     final message = _adoptionShareText(adoption);
+    final box = context.findRenderObject() as RenderBox?;
+    final shareOrigin =
+        box == null ? null : box.localToGlobal(Offset.zero) & box.size;
 
     try {
       final imageBytes = await _buildAdoptionShareCard(adoption);
+      final safeId = adoption.id.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '-');
+      final file = File(
+        '${Directory.systemTemp.path}/pawmatch-adopcion-$safeId.png',
+      );
+      await file.writeAsBytes(imageBytes, flush: true);
+
       await Share.shareXFiles(
         [
-          XFile.fromData(
-            imageBytes,
+          XFile(
+            file.path,
             mimeType: 'image/png',
+            name: 'pawmatch-adopcion-$safeId.png',
           ),
         ],
         text: message,
         subject: '${adoption.name} en adopción',
-        fileNameOverrides: ['pawmatch-adopcion-${adoption.id}.png'],
+        sharePositionOrigin: shareOrigin,
       );
     } catch (_) {
       await Share.share(
@@ -1025,7 +1039,7 @@ class _AdoptionPhotoGalleryState extends State<_AdoptionPhotoGallery> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.58),
+                  color: Colors.black.withOpacity(0.58),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -1106,7 +1120,7 @@ class _AdoptionPhotoFrame extends StatelessWidget {
         Image.network(
           photoUrl,
           fit: BoxFit.cover,
-          color: Colors.black.withValues(alpha: 0.20),
+          color: Colors.black.withOpacity(0.20),
           colorBlendMode: BlendMode.darken,
           errorBuilder: (context, error, stackTrace) {
             WidgetsBinding.instance.addPostFrameCallback((_) => onError());
@@ -1117,8 +1131,8 @@ class _AdoptionPhotoFrame extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.black.withValues(alpha: 0.08),
-                Colors.black.withValues(alpha: 0.18),
+                Colors.black.withOpacity(0.08),
+                Colors.black.withOpacity(0.18),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -1132,10 +1146,10 @@ class _AdoptionPhotoFrame extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: Colors.white.withOpacity(0.08),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.16),
+                      color: Colors.black.withOpacity(0.16),
                       blurRadius: 18,
                       offset: const Offset(0, 8),
                     ),
@@ -1170,7 +1184,7 @@ class _AdoptionPhotoFrame extends StatelessWidget {
             gradient: LinearGradient(
               colors: [
                 Colors.transparent,
-                Colors.black.withValues(alpha: 0.28),
+                Colors.black.withOpacity(0.28),
               ],
               begin: Alignment.center,
               end: Alignment.bottomCenter,
@@ -1351,7 +1365,7 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.success.withValues(alpha: 0.12),
+        color: AppColors.success.withOpacity(0.12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -1379,7 +1393,7 @@ class _InfoPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFFFF3E0),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.10)),
+        border: Border.all(color: AppColors.primary.withOpacity(0.10)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1408,7 +1422,7 @@ class _ShareAdoptionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.primary.withValues(alpha: 0.08),
+      color: AppColors.primary.withOpacity(0.08),
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
@@ -1684,45 +1698,59 @@ bool _isValidUrl(String url) =>
 
 Future<Uint8List> _buildAdoptionShareCard(AdoptionModel adoption) async {
   const width = 1080.0;
-  const height = 1600.0;
+  const height = 1920.0;
   final recorder = ui.PictureRecorder();
   final canvas = Canvas(recorder);
   final image = await _loadShareImage(adoption.mainPhoto.trim());
+  final logo = await _loadShareImage(
+    AdoptionScreen._adoptionLogoUrl,
+    targetWidth: 430,
+  );
 
   final background = Paint()..color = const Color(0xFFFFF7F2);
   canvas.drawRect(const Rect.fromLTWH(0, 0, width, height), background);
 
   final cardRect = RRect.fromRectAndRadius(
-    const Rect.fromLTWH(70, 70, 940, 1460),
+    const Rect.fromLTWH(70, 70, 940, 1780),
     const Radius.circular(58),
   );
   final cardPath = Path()..addRRect(cardRect);
-  canvas.drawShadow(cardPath, Colors.black.withValues(alpha: 0.18), 26, true);
+  canvas.drawShadow(cardPath, Colors.black.withOpacity(0.18), 26, true);
   canvas.drawRRect(cardRect, Paint()..color = Colors.white);
 
-  final pawRect = RRect.fromRectAndRadius(
-    const Rect.fromLTWH(120, 120, 86, 86),
-    const Radius.circular(24),
-  );
-  canvas.drawRRect(pawRect, Paint()..color = AppColors.primary);
-  _drawIcon(
-    canvas,
-    Icons.pets_rounded,
-    const Offset(145, 143),
-    38,
-    Colors.white,
-  );
+  if (logo != null) {
+    paintImage(
+      canvas: canvas,
+      rect: const Rect.fromLTWH(116, 104, 260, 112),
+      image: logo,
+      fit: BoxFit.contain,
+    );
+  } else {
+    final pawRect = RRect.fromRectAndRadius(
+      const Rect.fromLTWH(120, 120, 86, 86),
+      const Radius.circular(24),
+    );
+    canvas.drawRRect(pawRect, Paint()..color = AppColors.primary);
+    _drawIcon(
+      canvas,
+      Icons.pets_rounded,
+      const Offset(145, 143),
+      38,
+      Colors.white,
+    );
+  }
   _drawText(
     canvas,
-    'PawMatch',
-    const Offset(226, 136),
-    fontSize: 46,
+    'Adopciones',
+    const Offset(610, 136),
+    maxWidth: 340,
+    fontSize: 38,
     fontWeight: FontWeight.w900,
-    color: AppColors.textPrimary,
+    color: AppColors.primary,
   );
 
   final photoRect = RRect.fromRectAndRadius(
-    const Rect.fromLTWH(120, 250, 840, 650),
+    const Rect.fromLTWH(120, 260, 840, 840),
     const Radius.circular(42),
   );
   canvas.save();
@@ -1736,7 +1764,7 @@ Future<Uint8List> _buildAdoptionShareCard(AdoptionModel adoption) async {
       image: image,
       fit: BoxFit.cover,
       colorFilter: ColorFilter.mode(
-        Colors.black.withValues(alpha: 0.22),
+        Colors.black.withOpacity(0.22),
         BlendMode.darken,
       ),
     );
@@ -1761,22 +1789,22 @@ Future<Uint8List> _buildAdoptionShareCard(AdoptionModel adoption) async {
   _drawPill(
     canvas,
     adoption.typeLabel,
-    const Offset(150, 286),
-    background: Colors.black.withValues(alpha: 0.58),
+    const Offset(150, 296),
+    background: Colors.black.withOpacity(0.58),
     foreground: Colors.white,
   );
   _drawPill(
     canvas,
     adoption.statusLabel,
-    const Offset(720, 286),
-    background: AppColors.success.withValues(alpha: 0.90),
+    const Offset(720, 296),
+    background: AppColors.success.withOpacity(0.90),
     foreground: Colors.white,
   );
 
   _drawText(
     canvas,
     adoption.name,
-    const Offset(120, 960),
+    const Offset(120, 1170),
     maxWidth: 840,
     fontSize: 62,
     fontWeight: FontWeight.w900,
@@ -1785,7 +1813,7 @@ Future<Uint8List> _buildAdoptionShareCard(AdoptionModel adoption) async {
   _drawText(
     canvas,
     '${adoption.typeLabel} · ${adoption.age}',
-    const Offset(120, 1042),
+    const Offset(120, 1252),
     maxWidth: 840,
     fontSize: 34,
     fontWeight: FontWeight.w700,
@@ -1800,7 +1828,7 @@ Future<Uint8List> _buildAdoptionShareCard(AdoptionModel adoption) async {
   _drawText(
     canvas,
     details,
-    const Offset(120, 1104),
+    const Offset(120, 1314),
     maxWidth: 840,
     fontSize: 31,
     fontWeight: FontWeight.w800,
@@ -1810,34 +1838,34 @@ Future<Uint8List> _buildAdoptionShareCard(AdoptionModel adoption) async {
   _drawText(
     canvas,
     adoption.description.trim(),
-    const Offset(120, 1182),
+    const Offset(120, 1402),
     maxWidth: 840,
-    maxLines: 4,
+    maxLines: 5,
     fontSize: 34,
     height: 1.28,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary.withValues(alpha: 0.82),
+    color: AppColors.textPrimary.withOpacity(0.82),
   );
 
   final ctaRect = RRect.fromRectAndRadius(
-    const Rect.fromLTWH(120, 1390, 840, 86),
+    const Rect.fromLTWH(120, 1690, 840, 96),
     const Radius.circular(28),
   );
   canvas.drawRRect(
     ctaRect,
-    Paint()..color = AppColors.primary.withValues(alpha: 0.10),
+    Paint()..color = AppColors.primary.withOpacity(0.10),
   );
   _drawIcon(
     canvas,
     Icons.ios_share_rounded,
-    const Offset(158, 1418),
+    const Offset(158, 1724),
     32,
     AppColors.primary,
   );
   _drawText(
     canvas,
-    'Compartí para ayudar a encontrarle hogar',
-    const Offset(210, 1416),
+    'Compartí esta historia para ayudar',
+    const Offset(210, 1718),
     maxWidth: 700,
     fontSize: 30,
     fontWeight: FontWeight.w900,
@@ -1850,14 +1878,14 @@ Future<Uint8List> _buildAdoptionShareCard(AdoptionModel adoption) async {
   return png!.buffer.asUint8List();
 }
 
-Future<ui.Image?> _loadShareImage(String url) async {
+Future<ui.Image?> _loadShareImage(String url, {int? targetWidth}) async {
   if (!_isValidUrl(url)) return null;
 
   try {
     final bytes = await NetworkAssetBundle(Uri.parse(url)).load(url);
     final codec = await ui.instantiateImageCodec(
       bytes.buffer.asUint8List(),
-      targetWidth: 900,
+      targetWidth: targetWidth ?? 900,
     );
     final frame = await codec.getNextFrame();
     return frame.image;

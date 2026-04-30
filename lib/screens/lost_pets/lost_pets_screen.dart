@@ -625,7 +625,7 @@ class _LostPetCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: isBoosted
-                ? AppColors.warning.withValues(alpha: 0.22)
+                ? AppColors.warning.withOpacity(0.22)
                 : Colors.black.withOpacity(0.05),
             blurRadius: isBoosted ? 18 : 10,
             offset: Offset(0, isBoosted ? 6 : 3),

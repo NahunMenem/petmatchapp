@@ -13,6 +13,9 @@ class ApiConstants {
   static const String updateLocation = '/auth/me/location';
   static const String myReferral = '/auth/referral/me';
 
+  // App config
+  static const String appVersion = '/app/version';
+
   // Pets
   static const String pets = '/pets';
   static const String myPets = '/pets/mine';

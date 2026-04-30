@@ -24,7 +24,7 @@ Future<void> showPatitasInsufficientDialog(
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
+              color: AppColors.primary.withOpacity(0.12),
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(Icons.pets_rounded, color: AppColors.primary),
@@ -57,8 +57,7 @@ Future<void> showPatitasInsufficientDialog(
             decoration: BoxDecoration(
               color: const Color(0xFFFFF7F2),
               borderRadius: BorderRadius.circular(16),
-              border:
-                  Border.all(color: AppColors.primary.withValues(alpha: 0.18)),
+              border: Border.all(color: AppColors.primary.withOpacity(0.18)),
             ),
             child: Column(
               children: [

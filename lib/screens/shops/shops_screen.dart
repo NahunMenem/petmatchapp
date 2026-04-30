@@ -142,8 +142,7 @@ class _ShopsScreenState extends ConsumerState<ShopsScreen> {
                 ],
               ),
               data: (shops) {
-                final featured =
-                    shops.where((s) => s.esDestacado).toList();
+                final featured = shops.where((s) => s.esDestacado).toList();
 
                 return Column(
                   children: [
@@ -161,8 +160,8 @@ class _ShopsScreenState extends ConsumerState<ShopsScreen> {
                                 await ref.read(shopsProvider.future);
                               },
                               child: ListView(
-                                padding: const EdgeInsets.fromLTRB(
-                                    16, 12, 16, 16),
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 12, 16, 16),
                                 children: [
                                   // Featured horizontal section
                                   if (featured.isNotEmpty) ...[
@@ -303,17 +302,14 @@ class _ShopsHeader extends StatelessWidget {
                   onTap: () => onTipoSelected(cat.value),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primary
-                          : Colors.white,
+                      color: isSelected ? AppColors.primary : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.divider,
+                        color:
+                            isSelected ? AppColors.primary : AppColors.divider,
                       ),
                     ),
                     child: Text(
@@ -321,9 +317,8 @@ class _ShopsHeader extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: isSelected
-                            ? Colors.white
-                            : AppColors.textSecondary,
+                        color:
+                            isSelected ? Colors.white : AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -434,8 +429,7 @@ class _ShopsMapState extends State<_ShopsMap> {
     markers.add(
       Marker(
         markerId: const MarkerId('my-location'),
-        position:
-            widget.currentLocation ?? const LatLng(-34.5787, -58.4245),
+        position: widget.currentLocation ?? const LatLng(-34.5787, -58.4245),
         icon: await _buildLocationMarker(),
         anchor: const Offset(0.5, 0.5),
         infoWindow: const InfoWindow(title: 'Tu ubicación'),
@@ -447,8 +441,7 @@ class _ShopsMapState extends State<_ShopsMap> {
     }
   }
 
-  Future<BitmapDescriptor> _buildShopMarker(
-      String label, Color color) async {
+  Future<BitmapDescriptor> _buildShopMarker(String label, Color color) async {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
     const size = Size(132, 108);
@@ -456,7 +449,7 @@ class _ShopsMapState extends State<_ShopsMap> {
     final paint = Paint()..isAntiAlias = true;
 
     // Shadow circle
-    paint.color = color.withValues(alpha: 0.28);
+    paint.color = color.withOpacity(0.28);
     canvas.drawCircle(center.translate(0, 6), 28, paint);
 
     // Main circle
@@ -473,8 +466,7 @@ class _ShopsMapState extends State<_ShopsMap> {
     final handlePath = Path()
       ..moveTo(center.dx - 7, center.dy - 7)
       ..arcTo(
-        Rect.fromCenter(
-            center: center.translate(0, -9), width: 14, height: 8),
+        Rect.fromCenter(center: center.translate(0, -9), width: 14, height: 8),
         3.14,
         3.14,
         false,
@@ -507,7 +499,7 @@ class _ShopsMapState extends State<_ShopsMap> {
       ),
       const Radius.circular(10),
     );
-    paint.color = Colors.black.withValues(alpha: 0.12);
+    paint.color = Colors.black.withOpacity(0.12);
     canvas.drawRRect(labelRect.shift(const Offset(0, 3)), paint);
     paint.color = Colors.white;
     canvas.drawRRect(labelRect, paint);
@@ -531,7 +523,7 @@ class _ShopsMapState extends State<_ShopsMap> {
     final center = Offset(size.width / 2, size.height / 2);
     final paint = Paint()..isAntiAlias = true;
 
-    paint.color = AppColors.info.withValues(alpha: 0.24);
+    paint.color = AppColors.info.withOpacity(0.24);
     canvas.drawCircle(center, 15, paint);
     paint.color = Colors.white;
     canvas.drawCircle(center, 10, paint);
@@ -634,7 +626,7 @@ class _FeaturedCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFFFD6B0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Colors.black.withOpacity(0.06),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -683,8 +675,7 @@ class _FeaturedCard extends StatelessWidget {
             left: 0,
             right: 0,
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -726,8 +717,8 @@ class _FeaturedCard extends StatelessWidget {
     return Container(
       color: const Color(0xFFFFF3E0),
       child: const Center(
-        child: Icon(Icons.storefront_rounded,
-            color: AppColors.primary, size: 32),
+        child:
+            Icon(Icons.storefront_rounded, color: AppColors.primary, size: 32),
       ),
     );
   }
@@ -773,7 +764,7 @@ class _ShopCard extends StatelessWidget {
         border: Border.all(color: AppColors.divider),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -827,7 +818,7 @@ class _ShopCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.12),
+                            color: AppColors.primary.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Text(
@@ -896,7 +887,7 @@ class _ShopCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.14),
+                        color: AppColors.warning.withOpacity(0.14),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -951,8 +942,8 @@ class _ShopCard extends StatelessWidget {
     return Container(
       color: const Color(0xFFFFF3E0),
       child: const Center(
-        child: Icon(Icons.storefront_rounded,
-            color: AppColors.primary, size: 32),
+        child:
+            Icon(Icons.storefront_rounded, color: AppColors.primary, size: 32),
       ),
     );
   }
@@ -1006,7 +997,7 @@ class _TipoBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
-        color: _badgeColor.withValues(alpha: 0.12),
+        color: _badgeColor.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -1081,8 +1072,7 @@ class _ActionButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
           side: const BorderSide(color: AppColors.primary),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           textStyle: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,

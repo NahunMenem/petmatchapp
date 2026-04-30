@@ -599,7 +599,7 @@ class _PetListTile extends StatelessWidget {
                     label: pet.isActive ? 'Buscando pareja' : 'Pausada',
                     backgroundColor: pet.isActive
                         ? const Color(0x1F27AE60)
-                        : AppColors.textHint.withValues(alpha: 0.14),
+                        : AppColors.textHint.withOpacity(0.14),
                     textColor: pet.isActive
                         ? AppColors.success
                         : AppColors.textSecondary,

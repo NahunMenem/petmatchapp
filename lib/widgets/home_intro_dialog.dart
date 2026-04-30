@@ -292,7 +292,7 @@ class _ExploreMatchesHero extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primary.withValues(alpha: 0.08),
+            AppColors.primary.withOpacity(0.08),
             const Color(0xFFFFE8DE),
           ],
           begin: Alignment.topLeft,
@@ -371,7 +371,7 @@ class _ExploreBenefitItem extends StatelessWidget {
           width: 66,
           height: 66,
           decoration: BoxDecoration(
-            color: const Color(0xFFFF4C76).withValues(alpha: 0.12),
+            color: const Color(0xFFFF4C76).withOpacity(0.12),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -416,7 +416,7 @@ class _ExplorePatitasCallout extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFF4C76).withValues(alpha: 0.10),
+        color: const Color(0xFFFF4C76).withOpacity(0.10),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
@@ -661,7 +661,7 @@ class _PatitasBenefitItem extends StatelessWidget {
           width: 58,
           height: 58,
           decoration: BoxDecoration(
-            color: const Color(0xFFFF980F).withValues(alpha: 0.12),
+            color: const Color(0xFFFF980F).withOpacity(0.12),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -709,8 +709,8 @@ class _BuyPatitasCallout extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFFFF980F).withValues(alpha: 0.14),
-            const Color(0xFFFFC36B).withValues(alpha: 0.18),
+            const Color(0xFFFF980F).withOpacity(0.14),
+            const Color(0xFFFFC36B).withOpacity(0.18),
           ],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
@@ -723,7 +723,7 @@ class _BuyPatitasCallout extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: const Color(0xFFFF980F).withValues(alpha: 0.10),
+              color: const Color(0xFFFF980F).withOpacity(0.10),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -879,7 +879,7 @@ class _LostPetFeatureRow extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.10),
+              color: AppColors.primary.withOpacity(0.10),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(
@@ -929,7 +929,7 @@ class _PatitasReachCallout extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.09),
+        color: AppColors.primary.withOpacity(0.09),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(

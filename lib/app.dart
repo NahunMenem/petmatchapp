@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'core/theme/app_theme.dart';
 import 'models/message_model.dart';
+import 'models/app_version_model.dart';
 import 'providers/auth_provider.dart';
+import 'providers/app_version_provider.dart';
 import 'providers/pets_provider.dart';
+import 'core/theme/app_colors.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/onboarding/create_pet_screen.dart';
@@ -119,6 +123,7 @@ class PawMatchApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(_routerProvider);
+    final appVersion = ref.watch(appVersionProvider).valueOrNull;
     ref.listen(authProvider, (previous, next) {
       final previousStatus = previous?.valueOrNull?.status;
       final status = next.valueOrNull?.status;
@@ -137,6 +142,98 @@ class PawMatchApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: router,
+      builder: (context, child) {
+        if (appVersion?.updateRequired == true) {
+          return ForceUpdateScreen(status: appVersion!);
+        }
+        return child ?? const SizedBox.shrink();
+      },
+    );
+  }
+}
+
+class ForceUpdateScreen extends StatelessWidget {
+  final AppVersionStatus status;
+
+  const ForceUpdateScreen({super.key, required this.status});
+
+  Future<void> _open(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              const Spacer(),
+              Container(
+                width: 92,
+                height: 92,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: AppColors.matchGradient,
+                ),
+                child: const Icon(
+                  Icons.system_update_rounded,
+                  color: Colors.white,
+                  size: 42,
+                ),
+              ),
+              const SizedBox(height: 26),
+              const Text(
+                'Actualizá PawMatch',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                status.message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 16,
+                  height: 1.45,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 22),
+              Text(
+                'Tu versión: ${status.currentLabel} · Mínima: ${status.minimumVersion}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.textHint,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              ElevatedButton.icon(
+                onPressed: () => _open(status.iosUrl),
+                icon: const Icon(Icons.apple_rounded),
+                label: const Text('Actualizar en App Store'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => _open(status.androidUrl),
+                icon: const Icon(Icons.android_rounded),
+                label: const Text('Actualizar en Google Play'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
