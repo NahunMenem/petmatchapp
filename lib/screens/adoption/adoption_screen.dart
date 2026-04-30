@@ -1706,22 +1706,42 @@ Future<Uint8List> _buildAdoptionShareCard(AdoptionModel adoption) async {
     AdoptionScreen._adoptionLogoUrl,
     targetWidth: 430,
   );
+  final phone = adoption.phone.trim();
 
-  final background = Paint()..color = const Color(0xFFFFF7F2);
+  final background = Paint()
+    ..shader = const LinearGradient(
+      colors: [
+        Color(0xFFFF6B35),
+        Color(0xFFFF3B6A),
+        Color(0xFFFFF1E8),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ).createShader(const Rect.fromLTWH(0, 0, width, height));
   canvas.drawRect(const Rect.fromLTWH(0, 0, width, height), background);
+  canvas.drawCircle(
+    const Offset(930, 230),
+    210,
+    Paint()..color = Colors.white.withOpacity(0.18),
+  );
+  canvas.drawCircle(
+    const Offset(90, 1660),
+    260,
+    Paint()..color = Colors.white.withOpacity(0.14),
+  );
 
   final cardRect = RRect.fromRectAndRadius(
-    const Rect.fromLTWH(70, 70, 940, 1780),
-    const Radius.circular(58),
+    const Rect.fromLTWH(58, 76, 964, 1768),
+    const Radius.circular(64),
   );
   final cardPath = Path()..addRRect(cardRect);
-  canvas.drawShadow(cardPath, Colors.black.withOpacity(0.18), 26, true);
+  canvas.drawShadow(cardPath, Colors.black.withOpacity(0.24), 34, true);
   canvas.drawRRect(cardRect, Paint()..color = Colors.white);
 
   if (logo != null) {
     paintImage(
       canvas: canvas,
-      rect: const Rect.fromLTWH(116, 104, 260, 112),
+      rect: const Rect.fromLTWH(116, 116, 270, 108),
       image: logo,
       fit: BoxFit.contain,
     );
@@ -1741,22 +1761,22 @@ Future<Uint8List> _buildAdoptionShareCard(AdoptionModel adoption) async {
   }
   _drawText(
     canvas,
-    'Adopciones',
-    const Offset(610, 136),
-    maxWidth: 340,
-    fontSize: 38,
+    'Busca hogar',
+    const Offset(690, 134),
+    maxWidth: 250,
+    fontSize: 34,
     fontWeight: FontWeight.w900,
     color: AppColors.primary,
   );
 
   final photoRect = RRect.fromRectAndRadius(
-    const Rect.fromLTWH(120, 260, 840, 840),
-    const Radius.circular(42),
+    const Rect.fromLTWH(104, 258, 872, 830),
+    const Radius.circular(48),
   );
   canvas.save();
   canvas.clipRRect(photoRect);
   canvas.drawRect(
-      photoRect.outerRect, Paint()..color = AppColors.surfaceVariant);
+      photoRect.outerRect, Paint()..color = const Color(0xFFFFEFE7));
   if (image != null) {
     paintImage(
       canvas: canvas,
@@ -1764,16 +1784,9 @@ Future<Uint8List> _buildAdoptionShareCard(AdoptionModel adoption) async {
       image: image,
       fit: BoxFit.cover,
       colorFilter: ColorFilter.mode(
-        Colors.black.withOpacity(0.22),
+        Colors.black.withOpacity(0.10),
         BlendMode.darken,
       ),
-    );
-    final foregroundRect = photoRect.outerRect.deflate(34);
-    paintImage(
-      canvas: canvas,
-      rect: foregroundRect,
-      image: image,
-      fit: BoxFit.contain,
     );
   } else {
     _drawIcon(
@@ -1784,19 +1797,29 @@ Future<Uint8List> _buildAdoptionShareCard(AdoptionModel adoption) async {
       AppColors.textHint,
     );
   }
+  final photoShade = Paint()
+    ..shader = LinearGradient(
+      colors: [
+        Colors.transparent,
+        Colors.black.withOpacity(0.56),
+      ],
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+    ).createShader(photoRect.outerRect);
+  canvas.drawRect(photoRect.outerRect, photoShade);
   canvas.restore();
 
   _drawPill(
     canvas,
     adoption.typeLabel,
-    const Offset(150, 296),
+    const Offset(138, 294),
     background: Colors.black.withOpacity(0.58),
     foreground: Colors.white,
   );
   _drawPill(
     canvas,
     adoption.statusLabel,
-    const Offset(720, 296),
+    const Offset(732, 294),
     background: AppColors.success.withOpacity(0.90),
     foreground: Colors.white,
   );
@@ -1804,70 +1827,108 @@ Future<Uint8List> _buildAdoptionShareCard(AdoptionModel adoption) async {
   _drawText(
     canvas,
     adoption.name,
-    const Offset(120, 1170),
-    maxWidth: 840,
-    fontSize: 62,
+    const Offset(140, 920),
+    maxWidth: 800,
+    fontSize: 74,
     fontWeight: FontWeight.w900,
-    color: AppColors.textPrimary,
+    color: Colors.white,
   );
   _drawText(
     canvas,
-    '${adoption.typeLabel} · ${adoption.age}',
-    const Offset(120, 1252),
-    maxWidth: 840,
-    fontSize: 34,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textSecondary,
-  );
-
-  final details = [
-    adoption.distanceLabel ?? adoption.location,
-    _sizeLabel(adoption.size),
-    adoption.healthStatus,
-  ].where((detail) => detail.trim().isNotEmpty).join('   ·   ');
-  _drawText(
-    canvas,
-    details,
-    const Offset(120, 1314),
-    maxWidth: 840,
-    fontSize: 31,
+    '${adoption.typeLabel} · ${adoption.age} · ${_sizeLabel(adoption.size)}',
+    const Offset(142, 1010),
+    maxWidth: 790,
+    fontSize: 32,
     fontWeight: FontWeight.w800,
-    color: AppColors.primary,
+    color: Colors.white.withOpacity(0.92),
   );
 
+  final infoRect = RRect.fromRectAndRadius(
+    const Rect.fromLTWH(104, 1134, 872, 332),
+    const Radius.circular(42),
+  );
+  canvas.drawRRect(
+    infoRect,
+    Paint()..color = const Color(0xFFFFF7F2),
+  );
+  _drawShareInfoRow(
+    canvas,
+    icon: Icons.location_on_rounded,
+    title: 'Ubicación',
+    value: adoption.distanceLabel ?? adoption.location,
+    offset: const Offset(140, 1174),
+    maxWidth: 770,
+  );
+  _drawShareInfoRow(
+    canvas,
+    icon: Icons.health_and_safety_rounded,
+    title: 'Salud',
+    value: adoption.healthStatus,
+    offset: const Offset(140, 1264),
+    maxWidth: 770,
+  );
   _drawText(
     canvas,
     adoption.description.trim(),
-    const Offset(120, 1402),
-    maxWidth: 840,
-    maxLines: 5,
-    fontSize: 34,
-    height: 1.28,
-    fontWeight: FontWeight.w600,
+    const Offset(140, 1360),
+    maxWidth: 800,
+    maxLines: 3,
+    fontSize: 29,
+    height: 1.22,
+    fontWeight: FontWeight.w700,
     color: AppColors.textPrimary.withOpacity(0.82),
   );
 
-  final ctaRect = RRect.fromRectAndRadius(
-    const Rect.fromLTWH(120, 1690, 840, 96),
-    const Radius.circular(28),
+  final contactRect = RRect.fromRectAndRadius(
+    const Rect.fromLTWH(104, 1510, 872, 142),
+    const Radius.circular(38),
   );
   canvas.drawRRect(
-    ctaRect,
-    Paint()..color = AppColors.primary.withOpacity(0.10),
+    contactRect,
+    Paint()
+      ..shader = AppColors.matchGradient.createShader(
+        contactRect.outerRect,
+      ),
   );
   _drawIcon(
     canvas,
+    Icons.phone_rounded,
+    const Offset(148, 1549),
+    42,
+    Colors.white,
+  );
+  _drawText(
+    canvas,
+    phone.isEmpty ? 'Contactá desde PawMatch' : phone,
+    const Offset(210, 1534),
+    maxWidth: 720,
+    fontSize: 40,
+    fontWeight: FontWeight.w900,
+    color: Colors.white,
+  );
+  _drawText(
+    canvas,
+    'Teléfono / WhatsApp para consultar adopción',
+    const Offset(212, 1587),
+    maxWidth: 700,
+    fontSize: 24,
+    fontWeight: FontWeight.w800,
+    color: Colors.white.withOpacity(0.88),
+  );
+
+  _drawIcon(
+    canvas,
     Icons.ios_share_rounded,
-    const Offset(158, 1724),
+    const Offset(142, 1724),
     32,
     AppColors.primary,
   );
   _drawText(
     canvas,
-    'Compartí esta historia para ayudar',
-    const Offset(210, 1718),
-    maxWidth: 700,
-    fontSize: 30,
+    'Compartí esta historia para ayudar a encontrarle hogar',
+    const Offset(194, 1718),
+    maxWidth: 760,
+    fontSize: 28,
     fontWeight: FontWeight.w900,
     color: AppColors.primary,
   );
@@ -1876,6 +1937,50 @@ Future<Uint8List> _buildAdoptionShareCard(AdoptionModel adoption) async {
   final rendered = await picture.toImage(width.toInt(), height.toInt());
   final png = await rendered.toByteData(format: ui.ImageByteFormat.png);
   return png!.buffer.asUint8List();
+}
+
+void _drawShareInfoRow(
+  Canvas canvas, {
+  required IconData icon,
+  required String title,
+  required String value,
+  required Offset offset,
+  required double maxWidth,
+}) {
+  final iconRect = RRect.fromRectAndRadius(
+    Rect.fromLTWH(offset.dx, offset.dy, 54, 54),
+    const Radius.circular(18),
+  );
+  canvas.drawRRect(
+    iconRect,
+    Paint()..color = AppColors.primary.withOpacity(0.12),
+  );
+  _drawIcon(
+    canvas,
+    icon,
+    offset + const Offset(13, 13),
+    28,
+    AppColors.primary,
+  );
+  _drawText(
+    canvas,
+    title,
+    offset + const Offset(72, 0),
+    maxWidth: maxWidth - 72,
+    fontSize: 22,
+    fontWeight: FontWeight.w900,
+    color: AppColors.primary,
+  );
+  _drawText(
+    canvas,
+    value.trim().isEmpty ? 'No disponible' : value.trim(),
+    offset + const Offset(72, 29),
+    maxWidth: maxWidth - 72,
+    maxLines: 1,
+    fontSize: 27,
+    fontWeight: FontWeight.w800,
+    color: AppColors.textPrimary,
+  );
 }
 
 Future<ui.Image?> _loadShareImage(String url, {int? targetWidth}) async {
