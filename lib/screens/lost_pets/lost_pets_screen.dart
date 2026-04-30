@@ -8,6 +8,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/app_snack_bar.dart';
@@ -22,6 +24,9 @@ import '../../widgets/notification_bell.dart';
 import '../../widgets/patitas_insufficient_dialog.dart';
 
 class LostPetsScreen extends ConsumerStatefulWidget {
+  static const String _shareLogoUrl =
+      'https://res.cloudinary.com/dqsacd9ez/image/upload/v1776962386/PawMatch_upljxz.png';
+
   const LostPetsScreen({super.key});
 
   @override
@@ -794,6 +799,10 @@ class _LostPetCard extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: 8),
+                  _ShareLostPetButton(
+                    onTap: () => _shareLostPet(context, pet),
+                  ),
+                  const SizedBox(height: 8),
 
                   Wrap(
                     spacing: 8,
@@ -863,6 +872,66 @@ class _LostPetCard extends StatelessWidget {
         color: AppColors.surfaceVariant,
         child: const Icon(Icons.pets, size: 32, color: AppColors.textHint),
       );
+
+  Future<void> _shareLostPet(BuildContext context, LostPetModel pet) async {
+    final message = _lostPetShareText(pet);
+    final box = context.findRenderObject() as RenderBox?;
+    final shareOrigin =
+        box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+
+    try {
+      final imageBytes = await _buildLostPetShareCard(pet);
+      final safeId = pet.id.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '-');
+      final file = File(
+        '${Directory.systemTemp.path}/pawmatch-perdido-$safeId.png',
+      );
+      await file.writeAsBytes(imageBytes, flush: true);
+
+      await Share.shareXFiles(
+        [
+          XFile(
+            file.path,
+            mimeType: 'image/png',
+            name: 'pawmatch-perdido-$safeId.png',
+          ),
+        ],
+        text: message,
+        subject: 'Ayudemos a encontrar a ${pet.name}',
+        sharePositionOrigin: shareOrigin,
+      );
+    } catch (_) {
+      await Share.share(
+        message,
+        subject: 'Ayudemos a encontrar a ${pet.name}',
+      );
+    }
+  }
+
+  String _lostPetShareText(LostPetModel pet) {
+    final details = [
+      pet.typeLabel,
+      pet.location,
+      pet.timeAgo,
+      if (pet.rewardAmount != null) 'Recompensa \$${pet.rewardAmount}',
+      if (pet.alertRadiusKm != null) 'Alerta ${pet.alertRadiusKm} km',
+    ].where((item) => item.trim().isNotEmpty).join(' - ');
+    final photo = pet.photoUrl?.trim();
+    final message = StringBuffer()
+      ..writeln('Ayudemos a encontrar a ${pet.name}')
+      ..writeln(details)
+      ..writeln()
+      ..writeln(pet.description.trim())
+      ..writeln()
+      ..writeln('Contacto: ${pet.phone}');
+
+    if (photo != null && photo.isNotEmpty) {
+      message
+        ..writeln()
+        ..writeln(photo);
+    }
+
+    return message.toString().trim();
+  }
 
   Future<void> _callOwner(String phone) async {
     final uri = Uri.parse('tel:${_normalizePhone(phone)}');
@@ -991,6 +1060,43 @@ class _LostPetPhotoViewerModalState extends State<_LostPetPhotoViewerModal> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ShareLostPetButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _ShareLostPetButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.primary.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.ios_share_rounded, size: 18, color: AppColors.primary),
+              SizedBox(width: 8),
+              Text(
+                'Compartir en redes',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -2416,4 +2522,387 @@ class _AlertReachOption extends StatelessWidget {
       ),
     );
   }
+}
+
+bool _isValidShareUrl(String url) =>
+    url.startsWith('http://') || url.startsWith('https://');
+
+Future<Uint8List> _buildLostPetShareCard(LostPetModel pet) async {
+  const width = 1080.0;
+  const height = 1920.0;
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder);
+  final photo = await _loadLostShareImage(pet.photoUrl?.trim() ?? '');
+  final logo = await _loadLostShareImage(
+    LostPetsScreen._shareLogoUrl,
+    targetWidth: 430,
+  );
+
+  final background = Paint()
+    ..shader = const LinearGradient(
+      colors: [
+        Color(0xFFFF3B30),
+        Color(0xFFFF8A2A),
+        Color(0xFFFFF1E8),
+      ],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ).createShader(const Rect.fromLTWH(0, 0, width, height));
+  canvas.drawRect(const Rect.fromLTWH(0, 0, width, height), background);
+  canvas.drawCircle(
+    const Offset(914, 210),
+    215,
+    Paint()..color = Colors.white.withValues(alpha: 0.18),
+  );
+  canvas.drawCircle(
+    const Offset(92, 1652),
+    250,
+    Paint()..color = Colors.white.withValues(alpha: 0.14),
+  );
+
+  final cardRect = RRect.fromRectAndRadius(
+    const Rect.fromLTWH(58, 76, 964, 1768),
+    const Radius.circular(64),
+  );
+  final cardPath = Path()..addRRect(cardRect);
+  canvas.drawShadow(cardPath, Colors.black.withValues(alpha: 0.24), 34, true);
+  canvas.drawRRect(cardRect, Paint()..color = Colors.white);
+
+  if (logo != null) {
+    paintImage(
+      canvas: canvas,
+      rect: const Rect.fromLTWH(116, 116, 270, 108),
+      image: logo,
+      fit: BoxFit.contain,
+    );
+  } else {
+    final pawRect = RRect.fromRectAndRadius(
+      const Rect.fromLTWH(120, 120, 86, 86),
+      const Radius.circular(24),
+    );
+    canvas.drawRRect(pawRect, Paint()..color = AppColors.primary);
+    _drawLostIcon(
+      canvas,
+      Icons.pets_rounded,
+      const Offset(145, 143),
+      38,
+      Colors.white,
+    );
+  }
+
+  _drawLostText(
+    canvas,
+    'Alerta perdida',
+    const Offset(650, 134),
+    maxWidth: 290,
+    fontSize: 34,
+    fontWeight: FontWeight.w900,
+    color: AppColors.error,
+  );
+
+  final photoRect = RRect.fromRectAndRadius(
+    const Rect.fromLTWH(104, 258, 872, 830),
+    const Radius.circular(48),
+  );
+  canvas.save();
+  canvas.clipRRect(photoRect);
+  canvas.drawRect(
+    photoRect.outerRect,
+    Paint()..color = const Color(0xFFFFEFE7),
+  );
+  if (photo != null) {
+    paintImage(
+      canvas: canvas,
+      rect: photoRect.outerRect,
+      image: photo,
+      fit: BoxFit.cover,
+      colorFilter: ColorFilter.mode(
+        Colors.black.withValues(alpha: 0.14),
+        BlendMode.darken,
+      ),
+    );
+  } else {
+    _drawLostIcon(
+      canvas,
+      Icons.pets_rounded,
+      const Offset(480, 485),
+      120,
+      AppColors.textHint,
+    );
+  }
+  final photoShade = Paint()
+    ..shader = LinearGradient(
+      colors: [
+        Colors.transparent,
+        Colors.black.withValues(alpha: 0.62),
+      ],
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+    ).createShader(photoRect.outerRect);
+  canvas.drawRect(photoRect.outerRect, photoShade);
+  canvas.restore();
+
+  _drawLostPill(
+    canvas,
+    pet.typeLabel,
+    const Offset(138, 294),
+    background: Colors.black.withValues(alpha: 0.58),
+    foreground: Colors.white,
+  );
+  _drawLostPill(
+    canvas,
+    'PERDIDO',
+    const Offset(750, 294),
+    background: AppColors.error.withValues(alpha: 0.92),
+    foreground: Colors.white,
+  );
+
+  _drawLostText(
+    canvas,
+    pet.name,
+    const Offset(140, 920),
+    maxWidth: 800,
+    fontSize: 74,
+    fontWeight: FontWeight.w900,
+    color: Colors.white,
+  );
+  _drawLostText(
+    canvas,
+    '${pet.typeLabel} - ${pet.timeAgo}',
+    const Offset(142, 1010),
+    maxWidth: 790,
+    fontSize: 32,
+    fontWeight: FontWeight.w800,
+    color: Colors.white.withValues(alpha: 0.92),
+  );
+
+  final infoRect = RRect.fromRectAndRadius(
+    const Rect.fromLTWH(104, 1134, 872, 348),
+    const Radius.circular(42),
+  );
+  canvas.drawRRect(infoRect, Paint()..color = const Color(0xFFFFF7F2));
+  _drawLostInfoRow(
+    canvas,
+    icon: Icons.location_on_rounded,
+    title: 'Ultima zona',
+    value: pet.location,
+    offset: const Offset(140, 1176),
+    maxWidth: 770,
+  );
+  _drawLostInfoRow(
+    canvas,
+    icon: Icons.radar_rounded,
+    title: 'Distancia',
+    value: pet.distanceLabel,
+    offset: const Offset(140, 1266),
+    maxWidth: 770,
+  );
+  _drawLostText(
+    canvas,
+    pet.description.trim(),
+    const Offset(140, 1364),
+    maxWidth: 800,
+    maxLines: 3,
+    fontSize: 29,
+    height: 1.22,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary.withValues(alpha: 0.82),
+  );
+
+  final contactRect = RRect.fromRectAndRadius(
+    const Rect.fromLTWH(104, 1526, 872, 142),
+    const Radius.circular(38),
+  );
+  canvas.drawRRect(contactRect, Paint()..color = AppColors.error);
+  _drawLostIcon(
+    canvas,
+    Icons.phone_rounded,
+    const Offset(148, 1565),
+    42,
+    Colors.white,
+  );
+  _drawLostText(
+    canvas,
+    pet.phone.trim().isEmpty ? 'Contacta desde PawMatch' : pet.phone,
+    const Offset(210, 1550),
+    maxWidth: 720,
+    fontSize: 40,
+    fontWeight: FontWeight.w900,
+    color: Colors.white,
+  );
+  _drawLostText(
+    canvas,
+    'Telefono / WhatsApp para avisar',
+    const Offset(212, 1603),
+    maxWidth: 700,
+    fontSize: 24,
+    fontWeight: FontWeight.w800,
+    color: Colors.white.withValues(alpha: 0.88),
+  );
+
+  final footerText = pet.rewardAmount == null
+      ? 'Compartilo para ayudar a que vuelva a casa'
+      : 'Recompensa \$${pet.rewardAmount} - compartilo para ayudar';
+  _drawLostIcon(
+    canvas,
+    Icons.ios_share_rounded,
+    const Offset(142, 1730),
+    32,
+    AppColors.primary,
+  );
+  _drawLostText(
+    canvas,
+    footerText,
+    const Offset(194, 1724),
+    maxWidth: 760,
+    fontSize: 28,
+    fontWeight: FontWeight.w900,
+    color: AppColors.primary,
+  );
+
+  final picture = recorder.endRecording();
+  final rendered = await picture.toImage(width.toInt(), height.toInt());
+  final png = await rendered.toByteData(format: ui.ImageByteFormat.png);
+  return png!.buffer.asUint8List();
+}
+
+void _drawLostInfoRow(
+  Canvas canvas, {
+  required IconData icon,
+  required String title,
+  required String value,
+  required Offset offset,
+  required double maxWidth,
+}) {
+  final iconRect = RRect.fromRectAndRadius(
+    Rect.fromLTWH(offset.dx, offset.dy, 54, 54),
+    const Radius.circular(18),
+  );
+  canvas.drawRRect(
+    iconRect,
+    Paint()..color = AppColors.error.withValues(alpha: 0.12),
+  );
+  _drawLostIcon(
+    canvas,
+    icon,
+    offset + const Offset(13, 13),
+    28,
+    AppColors.error,
+  );
+  _drawLostText(
+    canvas,
+    title,
+    offset + const Offset(72, 0),
+    maxWidth: maxWidth - 72,
+    fontSize: 22,
+    fontWeight: FontWeight.w900,
+    color: AppColors.error,
+  );
+  _drawLostText(
+    canvas,
+    value.trim().isEmpty ? 'No disponible' : value.trim(),
+    offset + const Offset(72, 29),
+    maxWidth: maxWidth - 72,
+    maxLines: 1,
+    fontSize: 27,
+    fontWeight: FontWeight.w800,
+    color: AppColors.textPrimary,
+  );
+}
+
+Future<ui.Image?> _loadLostShareImage(String url, {int? targetWidth}) async {
+  if (!_isValidShareUrl(url)) return null;
+
+  try {
+    final bytes = await NetworkAssetBundle(Uri.parse(url)).load(url);
+    final codec = await ui.instantiateImageCodec(
+      bytes.buffer.asUint8List(),
+      targetWidth: targetWidth ?? 900,
+    );
+    final frame = await codec.getNextFrame();
+    return frame.image;
+  } catch (_) {
+    return null;
+  }
+}
+
+void _drawLostText(
+  Canvas canvas,
+  String text,
+  Offset offset, {
+  double maxWidth = double.infinity,
+  int? maxLines,
+  double fontSize = 24,
+  double height = 1.15,
+  FontWeight fontWeight = FontWeight.w600,
+  Color color = Colors.black,
+}) {
+  final painter = TextPainter(
+    text: TextSpan(
+      text: text,
+      style: TextStyle(
+        color: color,
+        fontSize: fontSize,
+        height: height,
+        fontWeight: fontWeight,
+      ),
+    ),
+    maxLines: maxLines,
+    ellipsis: maxLines == null ? null : '...',
+    textDirection: TextDirection.ltr,
+  )..layout(maxWidth: maxWidth);
+  painter.paint(canvas, offset);
+}
+
+void _drawLostPill(
+  Canvas canvas,
+  String text,
+  Offset offset, {
+  required Color background,
+  required Color foreground,
+}) {
+  final painter = TextPainter(
+    text: TextSpan(
+      text: text,
+      style: TextStyle(
+        color: foreground,
+        fontSize: 26,
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  )..layout();
+  final rect = Rect.fromLTWH(
+    offset.dx,
+    offset.dy,
+    painter.width + 42,
+    painter.height + 22,
+  );
+  canvas.drawRRect(
+    RRect.fromRectAndRadius(rect, const Radius.circular(999)),
+    Paint()..color = background,
+  );
+  painter.paint(canvas, offset + const Offset(21, 11));
+}
+
+void _drawLostIcon(
+  Canvas canvas,
+  IconData icon,
+  Offset offset,
+  double size,
+  Color color,
+) {
+  final painter = TextPainter(
+    text: TextSpan(
+      text: String.fromCharCode(icon.codePoint),
+      style: TextStyle(
+        fontFamily: icon.fontFamily,
+        package: icon.fontPackage,
+        fontSize: size,
+        color: color,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  )..layout();
+  painter.paint(canvas, offset);
 }
