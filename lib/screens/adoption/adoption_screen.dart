@@ -1,7 +1,11 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -9,6 +13,7 @@ import '../../core/utils/app_snack_bar.dart';
 import '../../models/adoption_model.dart';
 import '../../providers/adoption_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/notification_bell.dart';
 
 class AdoptionScreen extends ConsumerStatefulWidget {
   static const String _adoptionLogoUrl =
@@ -81,6 +86,7 @@ class _AdoptionScreenState extends ConsumerState<AdoptionScreen> {
             icon: const Icon(Icons.assignment_turned_in_outlined),
             onPressed: () => _showMyAdoptionsSheet(context, ref),
           ),
+          const NotificationBell(),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: GestureDetector(
@@ -442,16 +448,16 @@ class _AdoptionCard extends ConsumerWidget {
     final isOwner = currentUserId == adoption.publisherId;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 18),
+      margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.divider),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.divider.withValues(alpha: 0.75)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
+            color: Colors.black.withValues(alpha: 0.07),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
           ),
         ],
       ),
@@ -460,7 +466,7 @@ class _AdoptionCard extends ConsumerWidget {
         children: [
           _AdoptionPhotoGallery(adoption: adoption),
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -476,12 +482,21 @@ class _AdoptionCard extends ConsumerWidget {
                             style: Theme.of(context)
                                 .textTheme
                                 .titleLarge
-                                ?.copyWith(fontWeight: FontWeight.w800),
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0,
+                                ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             '${adoption.typeLabel} · ${adoption.age}',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
                         ],
                       ),
@@ -495,8 +510,9 @@ class _AdoptionCard extends ConsumerWidget {
                 Text(
                   adoption.description,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textPrimary.withOpacity(0.78),
+                        color: AppColors.textPrimary.withValues(alpha: 0.78),
                         height: 1.45,
+                        fontWeight: FontWeight.w500,
                       ),
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
@@ -521,7 +537,11 @@ class _AdoptionCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
+                _ShareAdoptionButton(
+                  onTap: () => _shareAdoption(adoption),
+                ),
+                const SizedBox(height: 14),
                 if (isOwner)
                   Row(
                     children: [
@@ -662,6 +682,53 @@ class _AdoptionCard extends ConsumerWidget {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  Future<void> _shareAdoption(AdoptionModel adoption) async {
+    final message = _adoptionShareText(adoption);
+
+    try {
+      final imageBytes = await _buildAdoptionShareCard(adoption);
+      await Share.shareXFiles(
+        [
+          XFile.fromData(
+            imageBytes,
+            mimeType: 'image/png',
+          ),
+        ],
+        text: message,
+        subject: '${adoption.name} en adopción',
+        fileNameOverrides: ['pawmatch-adopcion-${adoption.id}.png'],
+      );
+    } catch (_) {
+      await Share.share(
+        message,
+        subject: '${adoption.name} en adopción',
+      );
+    }
+  }
+
+  String _adoptionShareText(AdoptionModel adoption) {
+    final details = [
+      '${adoption.typeLabel} · ${adoption.age}',
+      if (adoption.distanceLabel != null) adoption.distanceLabel!,
+      _sizeLabel(adoption.size),
+      adoption.healthStatus,
+    ].join(' · ');
+    final photo = adoption.mainPhoto.trim();
+    final message = StringBuffer()
+      ..writeln('${adoption.name} busca hogar en PawMatch')
+      ..writeln(details)
+      ..writeln()
+      ..writeln(adoption.description.trim());
+
+    if (photo.isNotEmpty) {
+      message
+        ..writeln()
+        ..writeln(photo);
+    }
+
+    return message.toString();
   }
 
   String _normalizePhone(String phone) {
@@ -885,9 +952,8 @@ class _AdoptionPhotoGalleryState extends State<_AdoptionPhotoGallery> {
 
   void _openViewer(
       BuildContext context, List<String> photos, int initialIndex) {
-    final safeInitialIndex = photos.isEmpty
-        ? 0
-        : initialIndex.clamp(0, photos.length - 1);
+    final safeInitialIndex =
+        photos.isEmpty ? 0 : initialIndex.clamp(0, photos.length - 1);
     showDialog(
       context: context,
       barrierColor: Colors.black,
@@ -928,9 +994,9 @@ class _AdoptionPhotoGalleryState extends State<_AdoptionPhotoGallery> {
         _currentIndex >= photos.length ? photos.length - 1 : _currentIndex;
 
     return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       child: SizedBox(
-        height: 220,
+        height: 250,
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -942,45 +1008,10 @@ class _AdoptionPhotoGalleryState extends State<_AdoptionPhotoGallery> {
                 final photoUrl = photos[index];
                 return GestureDetector(
                   onTap: () => _openViewer(context, photos, index),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Image.network(
-                        photoUrl,
-                        fit: BoxFit.contain,
-                        loadingBuilder: (context, child, progress) {
-                          if (progress == null) return child;
-                          return Container(
-                            color: AppColors.surfaceVariant,
-                            alignment: Alignment.center,
-                            child: const CircularProgressIndicator(
-                              color: AppColors.primary,
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted) _markUrlAsFailed(photoUrl);
-                          });
-                          return _photoPlaceholder(height: 220);
-                        },
-                      ),
-                      const DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.transparent, Color(0xAA000000)],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                          ),
-                        ),
-                      ),
-                      // Ícono de expansión
-                      const Positioned(
-                        top: 12,
-                        right: 12,
-                        child: _ExpandIcon(),
-                      ),
-                    ],
+                  child: _AdoptionPhotoFrame(
+                    photoUrl: photoUrl,
+                    onError: () => _markUrlAsFailed(photoUrl),
+                    placeholder: _photoPlaceholder(height: 250),
                   ),
                 );
               },
@@ -992,7 +1023,7 @@ class _AdoptionPhotoGalleryState extends State<_AdoptionPhotoGallery> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.55),
+                  color: Colors.black.withValues(alpha: 0.58),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -1009,7 +1040,7 @@ class _AdoptionPhotoGalleryState extends State<_AdoptionPhotoGallery> {
               Positioned(
                 left: 14,
                 right: 14,
-                bottom: 14,
+                bottom: 16,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
@@ -1050,6 +1081,106 @@ class _ExpandIcon extends StatelessWidget {
       ),
       child:
           const Icon(Icons.fullscreen_rounded, color: Colors.white, size: 18),
+    );
+  }
+}
+
+class _AdoptionPhotoFrame extends StatelessWidget {
+  final String photoUrl;
+  final VoidCallback onError;
+  final Widget placeholder;
+
+  const _AdoptionPhotoFrame({
+    required this.photoUrl,
+    required this.onError,
+    required this.placeholder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.network(
+          photoUrl,
+          fit: BoxFit.cover,
+          color: Colors.black.withValues(alpha: 0.20),
+          colorBlendMode: BlendMode.darken,
+          errorBuilder: (context, error, stackTrace) {
+            WidgetsBinding.instance.addPostFrameCallback((_) => onError());
+            return placeholder;
+          },
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.black.withValues(alpha: 0.08),
+                Colors.black.withValues(alpha: 0.18),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.16),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Image.network(
+                  photoUrl,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return Container(
+                      color: AppColors.surfaceVariant,
+                      alignment: Alignment.center,
+                      child: const CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    WidgetsBinding.instance.addPostFrameCallback(
+                      (_) => onError(),
+                    );
+                    return placeholder;
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.transparent,
+                Colors.black.withValues(alpha: 0.28),
+              ],
+              begin: Alignment.center,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
+        const Positioned(
+          top: 12,
+          right: 12,
+          child: _ExpandIcon(),
+        ),
+      ],
     );
   }
 }
@@ -1218,7 +1349,7 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.success.withOpacity(0.12),
+        color: AppColors.success.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -1242,10 +1373,11 @@ class _InfoPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant,
+        color: const Color(0xFFFFF3E0),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.10)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1261,6 +1393,43 @@ class _InfoPill extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ShareAdoptionButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _ShareAdoptionButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.primary.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.ios_share_rounded, size: 19, color: AppColors.primary),
+              SizedBox(width: 9),
+              Text(
+                'Compartir en redes',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1468,8 +1637,7 @@ class _FiltersSheetState extends State<_FiltersSheet> {
               return FilterChip(
                 label: Text(age),
                 labelStyle: TextStyle(
-                  color:
-                      selected ? AppColors.primary : AppColors.textSecondary,
+                  color: selected ? AppColors.primary : AppColors.textSecondary,
                   fontWeight: FontWeight.w700,
                 ),
                 backgroundColor: Colors.white,
@@ -1502,8 +1670,7 @@ class _FiltersSheetState extends State<_FiltersSheet> {
               return FilterChip(
                 label: Text(entry.$1),
                 labelStyle: TextStyle(
-                  color:
-                      selected ? AppColors.primary : AppColors.textSecondary,
+                  color: selected ? AppColors.primary : AppColors.textSecondary,
                   fontWeight: FontWeight.w700,
                 ),
                 backgroundColor: Colors.white,
@@ -1542,6 +1709,271 @@ class _FiltersSheetState extends State<_FiltersSheet> {
 
 bool _isValidUrl(String url) =>
     url.startsWith('http://') || url.startsWith('https://');
+
+Future<Uint8List> _buildAdoptionShareCard(AdoptionModel adoption) async {
+  const width = 1080.0;
+  const height = 1600.0;
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder);
+  final image = await _loadShareImage(adoption.mainPhoto.trim());
+
+  final background = Paint()..color = const Color(0xFFFFF7F2);
+  canvas.drawRect(const Rect.fromLTWH(0, 0, width, height), background);
+
+  final cardRect = RRect.fromRectAndRadius(
+    const Rect.fromLTWH(70, 70, 940, 1460),
+    const Radius.circular(58),
+  );
+  final cardPath = Path()..addRRect(cardRect);
+  canvas.drawShadow(cardPath, Colors.black.withValues(alpha: 0.18), 26, true);
+  canvas.drawRRect(cardRect, Paint()..color = Colors.white);
+
+  final pawRect = RRect.fromRectAndRadius(
+    const Rect.fromLTWH(120, 120, 86, 86),
+    const Radius.circular(24),
+  );
+  canvas.drawRRect(pawRect, Paint()..color = AppColors.primary);
+  _drawIcon(
+    canvas,
+    Icons.pets_rounded,
+    const Offset(145, 143),
+    38,
+    Colors.white,
+  );
+  _drawText(
+    canvas,
+    'PawMatch',
+    const Offset(226, 136),
+    fontSize: 46,
+    fontWeight: FontWeight.w900,
+    color: AppColors.textPrimary,
+  );
+
+  final photoRect = RRect.fromRectAndRadius(
+    const Rect.fromLTWH(120, 250, 840, 650),
+    const Radius.circular(42),
+  );
+  canvas.save();
+  canvas.clipRRect(photoRect);
+  canvas.drawRect(
+      photoRect.outerRect, Paint()..color = AppColors.surfaceVariant);
+  if (image != null) {
+    paintImage(
+      canvas: canvas,
+      rect: photoRect.outerRect,
+      image: image,
+      fit: BoxFit.cover,
+      colorFilter: ColorFilter.mode(
+        Colors.black.withValues(alpha: 0.22),
+        BlendMode.darken,
+      ),
+    );
+    final foregroundRect = photoRect.outerRect.deflate(34);
+    paintImage(
+      canvas: canvas,
+      rect: foregroundRect,
+      image: image,
+      fit: BoxFit.contain,
+    );
+  } else {
+    _drawIcon(
+      canvas,
+      Icons.pets_rounded,
+      const Offset(480, 485),
+      120,
+      AppColors.textHint,
+    );
+  }
+  canvas.restore();
+
+  _drawPill(
+    canvas,
+    adoption.typeLabel,
+    const Offset(150, 286),
+    background: Colors.black.withValues(alpha: 0.58),
+    foreground: Colors.white,
+  );
+  _drawPill(
+    canvas,
+    adoption.statusLabel,
+    const Offset(720, 286),
+    background: AppColors.success.withValues(alpha: 0.90),
+    foreground: Colors.white,
+  );
+
+  _drawText(
+    canvas,
+    adoption.name,
+    const Offset(120, 960),
+    maxWidth: 840,
+    fontSize: 62,
+    fontWeight: FontWeight.w900,
+    color: AppColors.textPrimary,
+  );
+  _drawText(
+    canvas,
+    '${adoption.typeLabel} · ${adoption.age}',
+    const Offset(120, 1042),
+    maxWidth: 840,
+    fontSize: 34,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textSecondary,
+  );
+
+  final details = [
+    adoption.distanceLabel ?? adoption.location,
+    _sizeLabel(adoption.size),
+    adoption.healthStatus,
+  ].where((detail) => detail.trim().isNotEmpty).join('   ·   ');
+  _drawText(
+    canvas,
+    details,
+    const Offset(120, 1104),
+    maxWidth: 840,
+    fontSize: 31,
+    fontWeight: FontWeight.w800,
+    color: AppColors.primary,
+  );
+
+  _drawText(
+    canvas,
+    adoption.description.trim(),
+    const Offset(120, 1182),
+    maxWidth: 840,
+    maxLines: 4,
+    fontSize: 34,
+    height: 1.28,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary.withValues(alpha: 0.82),
+  );
+
+  final ctaRect = RRect.fromRectAndRadius(
+    const Rect.fromLTWH(120, 1390, 840, 86),
+    const Radius.circular(28),
+  );
+  canvas.drawRRect(
+    ctaRect,
+    Paint()..color = AppColors.primary.withValues(alpha: 0.10),
+  );
+  _drawIcon(
+    canvas,
+    Icons.ios_share_rounded,
+    const Offset(158, 1418),
+    32,
+    AppColors.primary,
+  );
+  _drawText(
+    canvas,
+    'Compartí para ayudar a encontrarle hogar',
+    const Offset(210, 1416),
+    maxWidth: 700,
+    fontSize: 30,
+    fontWeight: FontWeight.w900,
+    color: AppColors.primary,
+  );
+
+  final picture = recorder.endRecording();
+  final rendered = await picture.toImage(width.toInt(), height.toInt());
+  final png = await rendered.toByteData(format: ui.ImageByteFormat.png);
+  return png!.buffer.asUint8List();
+}
+
+Future<ui.Image?> _loadShareImage(String url) async {
+  if (!_isValidUrl(url)) return null;
+
+  try {
+    final bytes = await NetworkAssetBundle(Uri.parse(url)).load(url);
+    final codec = await ui.instantiateImageCodec(
+      bytes.buffer.asUint8List(),
+      targetWidth: 900,
+    );
+    final frame = await codec.getNextFrame();
+    return frame.image;
+  } catch (_) {
+    return null;
+  }
+}
+
+void _drawText(
+  Canvas canvas,
+  String text,
+  Offset offset, {
+  double maxWidth = double.infinity,
+  int? maxLines,
+  double fontSize = 24,
+  double height = 1.15,
+  FontWeight fontWeight = FontWeight.w600,
+  Color color = Colors.black,
+}) {
+  final painter = TextPainter(
+    text: TextSpan(
+      text: text,
+      style: TextStyle(
+        color: color,
+        fontSize: fontSize,
+        height: height,
+        fontWeight: fontWeight,
+      ),
+    ),
+    maxLines: maxLines,
+    ellipsis: maxLines == null ? null : '...',
+    textDirection: TextDirection.ltr,
+  )..layout(maxWidth: maxWidth);
+  painter.paint(canvas, offset);
+}
+
+void _drawPill(
+  Canvas canvas,
+  String text,
+  Offset offset, {
+  required Color background,
+  required Color foreground,
+}) {
+  final painter = TextPainter(
+    text: TextSpan(
+      text: text,
+      style: TextStyle(
+        color: foreground,
+        fontSize: 26,
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  )..layout();
+  final rect = Rect.fromLTWH(
+    offset.dx,
+    offset.dy,
+    painter.width + 42,
+    painter.height + 22,
+  );
+  canvas.drawRRect(
+    RRect.fromRectAndRadius(rect, const Radius.circular(999)),
+    Paint()..color = background,
+  );
+  painter.paint(canvas, offset + const Offset(21, 11));
+}
+
+void _drawIcon(
+  Canvas canvas,
+  IconData icon,
+  Offset offset,
+  double size,
+  Color color,
+) {
+  final painter = TextPainter(
+    text: TextSpan(
+      text: String.fromCharCode(icon.codePoint),
+      style: TextStyle(
+        fontFamily: icon.fontFamily,
+        package: icon.fontPackage,
+        fontSize: size,
+        color: color,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  )..layout();
+  painter.paint(canvas, offset);
+}
 
 String _sizeLabel(String size) {
   switch (size) {

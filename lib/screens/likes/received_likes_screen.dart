@@ -10,6 +10,7 @@ import '../../models/received_like_model.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/patitas_provider.dart';
 import '../../providers/pets_provider.dart';
+import '../../widgets/patitas_insufficient_dialog.dart';
 
 class ReceivedLikesScreen extends ConsumerWidget {
   const ReceivedLikesScreen({super.key});
@@ -37,12 +38,11 @@ class ReceivedLikesScreen extends ConsumerWidget {
             final wallet = ref.read(patitasWalletProvider).valueOrNull;
             final balance = wallet?.patitas ?? 0;
             if (balance < unlockCost) {
-              AppSnackBar.error(
+              showPatitasInsufficientDialog(
                 context,
-                title: 'Patitas insuficientes',
-                message: 'No tenes Patitas suficientes.',
-                actionLabel: 'Comprar',
-                onAction: () => context.push('/paw-points/buy'),
+                currentPatitas: balance,
+                requiredPatitas: unlockCost,
+                featureName: 'descubrir quien dio like',
               );
               return;
             }

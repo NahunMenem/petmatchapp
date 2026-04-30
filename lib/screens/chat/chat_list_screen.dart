@@ -6,6 +6,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../../core/theme/app_colors.dart';
 import '../../models/message_model.dart';
 import '../../providers/chat_provider.dart';
+import '../../widgets/notification_bell.dart';
 
 class ChatListScreen extends ConsumerWidget {
   const ChatListScreen({super.key});
@@ -32,12 +33,10 @@ class ChatListScreen extends ConsumerWidget {
                 return const _EmptyConversations();
               }
 
-              final newMatches = conversations
-                  .where((c) => c.lastMessage == null)
-                  .toList();
-              final withMessages = conversations
-                  .where((c) => c.lastMessage != null)
-                  .toList();
+              final newMatches =
+                  conversations.where((c) => c.lastMessage == null).toList();
+              final withMessages =
+                  conversations.where((c) => c.lastMessage != null).toList();
 
               return ListView(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
@@ -154,6 +153,8 @@ class _ChatHero extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 8),
+          const NotificationBell(),
         ],
       ),
     );
@@ -322,8 +323,7 @@ class _ConversationTile extends StatelessWidget {
             ),
             if (hasUnread)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   gradient: AppColors.matchGradient,
                   borderRadius: BorderRadius.circular(999),

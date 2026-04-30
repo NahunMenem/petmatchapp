@@ -18,6 +18,8 @@ import '../../providers/patitas_provider.dart';
 import '../../providers/pets_provider.dart';
 import '../../services/google_places_service.dart';
 import '../../widgets/brand_logo.dart';
+import '../../widgets/notification_bell.dart';
+import '../../widgets/patitas_insufficient_dialog.dart';
 
 class LostPetsScreen extends ConsumerStatefulWidget {
   const LostPetsScreen({super.key});
@@ -27,78 +29,13 @@ class LostPetsScreen extends ConsumerStatefulWidget {
 }
 
 class _LostPetsScreenState extends ConsumerState<LostPetsScreen> {
-  LatLng? _currentLocation;
-  bool _askedLocation = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _requestLocationForLostPets();
-    });
-  }
-
-  Future<void> _requestLocationForLostPets() async {
-    if (_askedLocation) return;
-    _askedLocation = true;
-
-    final storedLostLocation = ref.read(lostPetsLocationProvider);
-    if (storedLostLocation != null) {
-      setState(() {
-        _currentLocation = LatLng(
-          storedLostLocation.latitude,
-          storedLostLocation.longitude,
-        );
-      });
-      return;
-    }
-
-    final exploreLocation = ref.read(exploreLocationProvider);
-    if (exploreLocation != null) {
-      setState(() {
-        _currentLocation = LatLng(
-          exploreLocation.latitude,
-          exploreLocation.longitude,
-        );
-      });
-      ref.read(lostPetsLocationProvider.notifier).state = LostPetsLocation(
-        latitude: exploreLocation.latitude,
-        longitude: exploreLocation.longitude,
-      );
-      return;
-    }
-
-    try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) return;
-
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        return;
-      }
-
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      final location = LatLng(position.latitude, position.longitude);
-      if (!mounted) return;
-      setState(() => _currentLocation = location);
-      ref.read(lostPetsLocationProvider.notifier).state = LostPetsLocation(
-        latitude: position.latitude,
-        longitude: position.longitude,
-      );
-    } catch (_) {
-      // La pantalla sigue funcionando con el mapa y listado sin distancia local.
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final lostPetsAsync = ref.watch(lostPetsProvider);
+    final lostPetsLocation = ref.watch(lostPetsLocationProvider);
+    final currentLocation = lostPetsLocation == null
+        ? null
+        : LatLng(lostPetsLocation.latitude, lostPetsLocation.longitude);
     final currentUserId = ref.watch(authProvider).valueOrNull?.user?.id;
 
     return Scaffold(
@@ -106,13 +43,17 @@ class _LostPetsScreenState extends ConsumerState<LostPetsScreen> {
       appBar: AppBar(
         titleSpacing: 20,
         title: const BrandLogo(width: 156, height: 42),
+        actions: const [
+          NotificationBell(),
+          SizedBox(width: 8),
+        ],
       ),
       body: lostPetsAsync.when(
         loading: () => Column(
           children: [
             _MapSection(
               pets: const [],
-              currentLocation: _currentLocation,
+              currentLocation: currentLocation,
               onReport: () => _showReportSheet(context),
             ),
             const Expanded(
@@ -126,7 +67,7 @@ class _LostPetsScreenState extends ConsumerState<LostPetsScreen> {
           children: [
             _MapSection(
               pets: const [],
-              currentLocation: _currentLocation,
+              currentLocation: currentLocation,
               onReport: () => _showReportSheet(context),
             ),
             Expanded(
@@ -145,7 +86,7 @@ class _LostPetsScreenState extends ConsumerState<LostPetsScreen> {
             children: [
               _MapSection(
                 pets: lostPets,
-                currentLocation: _currentLocation,
+                currentLocation: currentLocation,
                 nearbyCount: nearbyCount,
                 onReport: () => _showReportSheet(context),
               ),
@@ -338,6 +279,7 @@ class _ReportMapButton extends StatelessWidget {
 
 class _MapPlaceholderState extends State<_MapPlaceholder> {
   Set<Marker> _markers = const {};
+  GoogleMapController? _mapController;
 
   static const _petmatchMapStyle = '''
 [
@@ -372,6 +314,16 @@ class _MapPlaceholderState extends State<_MapPlaceholder> {
         oldWidget.currentLocation != widget.currentLocation) {
       _loadMarkers();
     }
+    if (oldWidget.currentLocation != widget.currentLocation &&
+        widget.currentLocation != null) {
+      _moveCameraTo(widget.currentLocation!);
+    }
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
   }
 
   Future<void> _loadMarkers() async {
@@ -499,6 +451,16 @@ class _MapPlaceholderState extends State<_MapPlaceholder> {
     return BitmapDescriptor.bytes(bytes!.buffer.asUint8List());
   }
 
+  Future<void> _moveCameraTo(LatLng location) async {
+    final controller = _mapController;
+    if (controller == null) return;
+    await controller.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: location, zoom: 14),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final mapHeight = MediaQuery.sizeOf(context).height * 0.48;
@@ -510,6 +472,11 @@ class _MapPlaceholderState extends State<_MapPlaceholder> {
       child: Stack(
         children: [
           GoogleMap(
+            onMapCreated: (controller) {
+              _mapController = controller;
+              final location = widget.currentLocation;
+              if (location != null) _moveCameraTo(location);
+            },
             initialCameraPosition: CameraPosition(
               target:
                   widget.currentLocation ?? const LatLng(-34.5787, -58.4245),
@@ -547,7 +514,7 @@ class _AlertBanner extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Hay $count mascota${count > 1 ? 's' : ''} perdida${count > 1 ? 's' : ''} a menos de 1 km de vos!',
+              'Hay $count mascota${count > 1 ? 's' : ''} perdida${count > 1 ? 's' : ''} muy cerca de vos. El mapa muestra reportes hasta 5 km.',
               style: const TextStyle(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
@@ -628,7 +595,8 @@ class _LostPetCard extends StatelessWidget {
     this.onEdit,
   });
 
-  void _openViewer(BuildContext context, List<String> photos, int initialIndex) {
+  void _openViewer(
+      BuildContext context, List<String> photos, int initialIndex) {
     final safeInitialIndex =
         photos.isEmpty ? 0 : initialIndex.clamp(0, photos.length - 1);
     showDialog(
@@ -643,17 +611,24 @@ class _LostPetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isBoosted = pet.alertRadiusKm != null;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isBoosted ? const Color(0xFFFFF7EC) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(
+          color: isBoosted ? AppColors.warning : AppColors.divider,
+          width: isBoosted ? 1.5 : 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            color: isBoosted
+                ? AppColors.warning.withValues(alpha: 0.22)
+                : Colors.black.withOpacity(0.05),
+            blurRadius: isBoosted ? 18 : 10,
+            offset: Offset(0, isBoosted ? 6 : 3),
           ),
         ],
       ),
@@ -724,6 +699,27 @@ class _LostPetCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (isBoosted) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.warning,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            'DESTACADA ${pet.alertRadiusKm} KM',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ],
                       if (pet.isUrgent)
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -1326,7 +1322,12 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
     final selectedReach = _selectedReach;
     final wallet = ref.read(patitasWalletProvider).valueOrNull;
     if (selectedReach != null && (wallet?.patitas ?? 0) < selectedReach.cost) {
-      _showLocationSnack('No tenes Patitas suficientes para ese alcance');
+      showPatitasInsufficientDialog(
+        context,
+        currentPatitas: wallet?.patitas ?? 0,
+        requiredPatitas: selectedReach.cost,
+        featureName: 'ampliar la notificacion a ${selectedReach.radiusKm} km',
+      );
       return;
     }
 
@@ -1453,7 +1454,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+          children: [
             Row(
               children: [
                 Text(_isEditing ? 'Editar alerta' : 'Reportar mascota perdida',
@@ -2057,6 +2058,18 @@ class _AlertReachSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final needsPatitas = availablePatitas < _alertReach2km.cost;
+    void handleReachTap(_AlertReach reach) {
+      if (availablePatitas < reach.cost) {
+        showPatitasInsufficientDialog(
+          context,
+          currentPatitas: availablePatitas,
+          requiredPatitas: reach.cost,
+          featureName: 'ampliar la notificacion a ${reach.radiusKm} km',
+        );
+        return;
+      }
+      onSelected(reach);
+    }
 
     return Container(
       width: double.infinity,
@@ -2084,7 +2097,7 @@ class _AlertReachSection extends StatelessWidget {
                 ),
               ),
               InkWell(
-                onTap: () => context.push('/paw-points'),
+                onTap: () => context.push('/paw-points/buy'),
                 borderRadius: BorderRadius.circular(999),
                 child: Container(
                   padding:
@@ -2138,7 +2151,7 @@ class _AlertReachSection extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () => context.push('/paw-points'),
+                onPressed: () => context.push('/paw-points/buy'),
                 icon: const Icon(Icons.pets_rounded, size: 18),
                 label: const Text('Recargar Patitas'),
                 style: OutlinedButton.styleFrom(
@@ -2163,21 +2176,21 @@ class _AlertReachSection extends StatelessWidget {
             reach: _alertReach2km,
             selected: selectedReach == _alertReach2km,
             disabled: availablePatitas < _alertReach2km.cost,
-            onTap: () => onSelected(_alertReach2km),
+            onTap: () => handleReachTap(_alertReach2km),
           ),
           const SizedBox(height: 8),
           _AlertReachOption(
             reach: _alertReach5km,
             selected: selectedReach == _alertReach5km,
             disabled: availablePatitas < _alertReach5km.cost,
-            onTap: () => onSelected(_alertReach5km),
+            onTap: () => handleReachTap(_alertReach5km),
           ),
           const SizedBox(height: 8),
           _AlertReachOption(
             reach: _alertReach10km,
             selected: selectedReach == _alertReach10km,
             disabled: availablePatitas < _alertReach10km.cost,
-            onTap: () => onSelected(_alertReach10km),
+            onTap: () => handleReachTap(_alertReach10km),
           ),
         ],
       ),
@@ -2333,7 +2346,7 @@ class _AlertReachOption extends StatelessWidget {
   Widget build(BuildContext context) {
     final foreground = selected ? Colors.white : AppColors.textPrimary;
     return GestureDetector(
-      onTap: disabled ? null : onTap,
+      onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         width: double.infinity,

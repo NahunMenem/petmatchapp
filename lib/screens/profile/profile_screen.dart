@@ -13,6 +13,7 @@ import '../../providers/chat_provider.dart';
 import '../../providers/patitas_provider.dart';
 import '../../providers/pets_provider.dart';
 import '../../widgets/home_intro_dialog.dart';
+import '../../widgets/notification_bell.dart';
 import 'paw_points_screen.dart';
 import 'pet_detail_screen.dart';
 
@@ -37,8 +38,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final myPetsAsync = ref.watch(myPetsProvider);
     final conversationsAsync = ref.watch(conversationsProvider);
     final myAdoptionsAsync = ref.watch(myAdoptionsProvider);
-    final patitas =
-        ref.watch(patitasWalletProvider).valueOrNull?.patitas ?? user?.patitas ?? 0;
+    final patitas = ref.watch(patitasWalletProvider).valueOrNull?.patitas ??
+        user?.patitas ??
+        0;
     final receivedLikes =
         ref.watch(receivedLikesProvider).valueOrNull?.total ?? 0;
     final petCount = myPetsAsync.valueOrNull?.length ?? 0;
@@ -55,6 +57,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             expandedHeight: 180,
             pinned: true,
             backgroundColor: AppColors.surface,
+            actions: const [
+              NotificationBell(
+                iconColor: AppColors.primary,
+                backgroundColor: Colors.white,
+              ),
+              SizedBox(width: 8),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
@@ -519,7 +528,8 @@ class _PetListTile extends StatelessWidget {
       ),
       child: ListTile(
         onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         minLeadingWidth: 86,
         leading: Stack(
           clipBehavior: Clip.none,
@@ -590,8 +600,9 @@ class _PetListTile extends StatelessWidget {
                     backgroundColor: pet.isActive
                         ? const Color(0x1F27AE60)
                         : AppColors.textHint.withValues(alpha: 0.14),
-                    textColor:
-                        pet.isActive ? AppColors.success : AppColors.textSecondary,
+                    textColor: pet.isActive
+                        ? AppColors.success
+                        : AppColors.textSecondary,
                   ),
                 ],
               ),
@@ -615,8 +626,9 @@ class _PetListTile extends StatelessWidget {
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   height: 1.3,
-                  color:
-                      pet.isActive ? AppColors.success : AppColors.textSecondary,
+                  color: pet.isActive
+                      ? AppColors.success
+                      : AppColors.textSecondary,
                 ),
               ),
             ],

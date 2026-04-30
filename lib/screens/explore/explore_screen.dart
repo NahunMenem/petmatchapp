@@ -10,6 +10,8 @@ import '../../providers/chat_provider.dart';
 import '../../providers/patitas_provider.dart';
 import '../../providers/pets_provider.dart';
 import '../../widgets/brand_logo.dart';
+import '../../widgets/notification_bell.dart';
+import '../../widgets/patitas_insufficient_dialog.dart';
 import '../../widgets/pet_card.dart';
 import '../home/home_screen.dart';
 
@@ -67,12 +69,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     final wallet = ref.read(patitasWalletProvider).valueOrNull;
     if ((wallet?.patitas ?? 0) < cost) {
       if (!mounted) return;
-      AppSnackBar.error(
+      showPatitasInsufficientDialog(
         context,
-        title: 'Patitas insuficientes',
-        message: 'Necesitas 10 Patitas para enviar un Super Like.',
-        actionLabel: 'Comprar',
-        onAction: () => context.push('/paw-points/buy'),
+        currentPatitas: wallet?.patitas ?? 0,
+        requiredPatitas: cost,
+        featureName: 'enviar un Super Like',
       );
       return;
     }
@@ -117,10 +118,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             icon: const Icon(Icons.tune_rounded),
             onPressed: () => _showFilterSheet(context),
           ),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => context.push('/notifications'),
-          ),
+          const NotificationBell(),
         ],
       ),
       body: Stack(
@@ -484,15 +482,20 @@ class _PremiumFilterSheet extends ConsumerWidget {
       next.whenOrNull(
         error: (error, _) {
           final insufficient = error.toString().contains('402');
-          AppSnackBar.error(
-            context,
-            message: insufficient
-                ? 'Necesitas Patitas para activar filtros avanzados.'
-                : 'No se pudieron activar los filtros avanzados.',
-            actionLabel: insufficient ? 'Comprar' : null,
-            onAction:
-                insufficient ? () => context.push('/paw-points/buy') : null,
-          );
+          if (insufficient) {
+            final wallet = ref.read(patitasWalletProvider).valueOrNull;
+            showPatitasInsufficientDialog(
+              context,
+              currentPatitas: wallet?.patitas ?? 0,
+              requiredPatitas: 30,
+              featureName: 'activar filtros avanzados',
+            );
+          } else {
+            AppSnackBar.error(
+              context,
+              message: 'No se pudieron activar los filtros avanzados.',
+            );
+          }
         },
       );
     });
@@ -875,8 +878,7 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
             child: ElevatedButton(
               onPressed: () {
                 ref.read(exploreTypeProvider.notifier).state = _selectedType;
-                ref.read(exploreBreedProvider.notifier).state =
-                    _selectedBreed;
+                ref.read(exploreBreedProvider.notifier).state = _selectedBreed;
                 ref.invalidate(exploreProvider);
                 Navigator.pop(context);
               },

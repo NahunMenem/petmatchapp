@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/chat_provider.dart';
+import '../../providers/lost_pets_provider.dart';
 import '../../providers/patitas_provider.dart';
 import '../../providers/pets_provider.dart';
 import '../../services/push_notification_service.dart';
@@ -32,9 +33,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _checkedIntroModal = false;
 
   static const _screens = [
-    ExploreScreen(),
     AdoptionScreen(),
     LostPetsScreen(),
+    ExploreScreen(),
     ChatListScreen(),
     ProfileScreen(),
   ];
@@ -121,19 +122,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             desiredAccuracy: LocationAccuracy.high,
           );
           ref.read(exploreLocationProvider.notifier).state = ExploreLocation(
-                latitude: position.latitude,
-                longitude: position.longitude,
-              );
-          final updatedUser = await ref.read(authServiceProvider).updateLocation(
-                latitude: position.latitude,
-                longitude: position.longitude,
-              );
+            latitude: position.latitude,
+            longitude: position.longitude,
+          );
+          final updatedUser =
+              await ref.read(authServiceProvider).updateLocation(
+                    latitude: position.latitude,
+                    longitude: position.longitude,
+                  );
           ref.read(authProvider.notifier).updateUser(updatedUser);
           ref.invalidate(exploreProvider);
         } catch (_) {}
       } else if (permission == LocationPermission.deniedForever) {
         await Geolocator.openAppSettings();
       }
+    }
+  }
+
+  Future<void> _refreshLostPetsLocation() async {
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      ref.read(lostPetsLocationProvider.notifier).state = LostPetsLocation(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+      ref.invalidate(lostPetsProvider);
+    } catch (_) {
+      // Perdidos sigue funcionando con la ultima ubicacion disponible.
     }
   }
 
@@ -184,16 +213,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 onTap: (i) {
                   setState(() => _loadedTabs.add(i));
                   ref.read(selectedHomeTabProvider.notifier).state = i;
+                  if (i == 1) {
+                    _refreshLostPetsLocation();
+                  }
                   if (i == 3) {
                     ref.invalidate(conversationsProvider);
                   }
                 },
                 items: [
-                  const BottomNavigationBarItem(
-                    icon: Icon(Icons.explore_outlined),
-                    activeIcon: Icon(Icons.explore),
-                    label: 'EXPLORAR',
-                  ),
                   const BottomNavigationBarItem(
                     icon: Icon(Icons.favorite_border_rounded),
                     activeIcon: Icon(Icons.favorite_rounded),
@@ -203,6 +230,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     icon: Icon(Icons.location_on_outlined),
                     activeIcon: Icon(Icons.location_on_rounded),
                     label: 'PERDIDOS',
+                  ),
+                  const BottomNavigationBarItem(
+                    icon: Icon(Icons.explore_outlined),
+                    activeIcon: Icon(Icons.explore),
+                    label: 'EXPLORAR',
                   ),
                   BottomNavigationBarItem(
                     icon: badges.Badge(
@@ -306,14 +338,16 @@ class _PermissionsWelcomeSheet extends StatelessWidget {
               const _PermissionFeatureTile(
                 icon: Icons.notifications_active_rounded,
                 title: 'Notificaciones',
-                subtitle: 'Recibí likes, matches, mensajes y alertas importantes.',
+                subtitle:
+                    'Recibí likes, matches, mensajes y alertas importantes.',
               ),
             if (needsNotifications && needsLocation) const SizedBox(height: 12),
             if (needsLocation)
               const _PermissionFeatureTile(
                 icon: Icons.location_on_rounded,
                 title: 'Ubicación',
-                subtitle: 'Mostrá mascotas cercanas y ayudá con casos de extravío.',
+                subtitle:
+                    'Mostrá mascotas cercanas y ayudá con casos de extravío.',
               ),
             const SizedBox(height: 24),
             SizedBox(
