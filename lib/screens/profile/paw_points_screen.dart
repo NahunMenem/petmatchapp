@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -92,9 +91,7 @@ class _BuyPawPointsScreenState extends ConsumerState<BuyPawPointsScreen>
     try {
       final preference =
           await ref.read(patitasServiceProvider).createPreference(pack.id);
-      final checkoutUrl = kDebugMode
-          ? preference.sandboxInitPoint ?? preference.initPoint
-          : preference.initPoint;
+      final checkoutUrl = preference.initPoint;
       final uri = Uri.parse(checkoutUrl);
       final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!opened && mounted) {
