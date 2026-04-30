@@ -78,107 +78,145 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         authState.isLoading && !_loadingEmail && !_loadingGoogle;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFFF2EA),
       body: SafeArea(
         child: checkingSession
             ? const _Splash()
-            : Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 18, 24, 28),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 430),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Center(
-                            child: BrandLogo(width: 250, height: 104),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Entrá a PawMatch',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 30,
-                              height: 1.08,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Matches, adopciones y alertas cerca tuyo.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 15,
-                              height: 1.35,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 28),
-                          GoogleButton(
-                            label: _loadingGoogle
-                                ? 'Conectando...'
-                                : 'Continuar con Google',
-                            onPressed: _loadingEmail || _loadingGoogle
-                                ? null
-                                : _loginWithGoogle,
-                          ),
-                          const SizedBox(height: 20),
-                          const _DividerLabel(),
-                          const SizedBox(height: 20),
-                          TextFormField(
-                            controller: _emailCtrl,
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              labelText: 'Email',
-                              prefixIcon: Icon(Icons.email_outlined),
-                            ),
-                            validator: Validators.email,
-                          ),
-                          const SizedBox(height: 14),
-                          TextFormField(
-                            controller: _passCtrl,
-                            obscureText: _obscurePass,
-                            textInputAction: TextInputAction.done,
-                            onFieldSubmitted: (_) => _login(),
-                            decoration: InputDecoration(
-                              labelText: 'Contraseña',
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePass
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
+            : Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFFFFF2EA),
+                      Color(0xFFFFE2D1),
+                      Color(0xFFFFF8F4),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    const _LoginColorWash(),
+                    Center(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(24, 18, 24, 28),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 430),
+                          child: Form(
+                            key: _formKey,
+                            child: Container(
+                              padding:
+                                  const EdgeInsets.fromLTRB(22, 24, 22, 20),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.88),
+                                borderRadius: BorderRadius.circular(34),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.7),
                                 ),
-                                onPressed: () => setState(
-                                  () => _obscurePass = !_obscurePass,
-                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.16),
+                                    blurRadius: 34,
+                                    offset: const Offset(0, 20),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const Center(
+                                    child: BrandLogo(width: 245, height: 98),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    'Entrá a PawMatch',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: AppColors.textPrimary,
+                                      fontSize: 24,
+                                      height: 1.12,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'Matches, adopciones y alertas cerca tuyo.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 14,
+                                      height: 1.35,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  GoogleButton(
+                                    label: _loadingGoogle
+                                        ? 'Conectando...'
+                                        : 'Continuar con Google',
+                                    onPressed: _loadingEmail || _loadingGoogle
+                                        ? null
+                                        : _loginWithGoogle,
+                                  ),
+                                  const SizedBox(height: 18),
+                                  const _DividerLabel(),
+                                  const SizedBox(height: 18),
+                                  TextFormField(
+                                    controller: _emailCtrl,
+                                    keyboardType: TextInputType.emailAddress,
+                                    textInputAction: TextInputAction.next,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Email',
+                                      prefixIcon: Icon(Icons.email_outlined),
+                                    ),
+                                    validator: Validators.email,
+                                  ),
+                                  const SizedBox(height: 14),
+                                  TextFormField(
+                                    controller: _passCtrl,
+                                    obscureText: _obscurePass,
+                                    textInputAction: TextInputAction.done,
+                                    onFieldSubmitted: (_) => _login(),
+                                    decoration: InputDecoration(
+                                      labelText: 'Contraseña',
+                                      prefixIcon:
+                                          const Icon(Icons.lock_outline),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _obscurePass
+                                              ? Icons.visibility_outlined
+                                              : Icons.visibility_off_outlined,
+                                        ),
+                                        onPressed: () => setState(
+                                          () => _obscurePass = !_obscurePass,
+                                        ),
+                                      ),
+                                    ),
+                                    validator: Validators.password,
+                                  ),
+                                  const SizedBox(height: 18),
+                                  PrimaryButton(
+                                    label: 'Ingresar',
+                                    isLoading: _loadingEmail,
+                                    onPressed: _loadingEmail || _loadingGoogle
+                                        ? null
+                                        : _login,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TextButton(
+                                    onPressed: () => context.push('/register'),
+                                    child: const Text('Crear cuenta nueva'),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const _LoginFooter(),
+                                ],
                               ),
                             ),
-                            validator: Validators.password,
                           ),
-                          const SizedBox(height: 18),
-                          PrimaryButton(
-                            label: 'Ingresar',
-                            isLoading: _loadingEmail,
-                            onPressed:
-                                _loadingEmail || _loadingGoogle ? null : _login,
-                          ),
-                          const SizedBox(height: 18),
-                          TextButton(
-                            onPressed: () => context.push('/register'),
-                            child: const Text('Crear cuenta nueva'),
-                          ),
-                          const SizedBox(height: 20),
-                          const _LoginFooter(),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
       ),
@@ -193,6 +231,54 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
     if (text.contains('Google')) return 'No se pudo ingresar con Google';
     return 'No se pudo iniciar sesión';
+  }
+}
+
+class _LoginColorWash extends StatelessWidget {
+  const _LoginColorWash();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned(
+          top: -70,
+          right: -80,
+          child: Container(
+            width: 260,
+            height: 260,
+            decoration: BoxDecoration(
+              color: AppColors.secondary.withOpacity(0.20),
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+        Positioned(
+          left: -90,
+          bottom: 80,
+          child: Container(
+            width: 300,
+            height: 300,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.18),
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+        Positioned(
+          left: 42,
+          right: 42,
+          top: 88,
+          child: Container(
+            height: 86,
+            decoration: BoxDecoration(
+              gradient: AppColors.matchGradient,
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
