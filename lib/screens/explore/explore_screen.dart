@@ -640,6 +640,15 @@ class _PremiumFilterSheet extends ConsumerWidget {
                             color: AppColors.primary,
                           ),
                         ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Desbloquea filtros avanzados por 30 dias',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -673,7 +682,7 @@ class _PremiumFilterSheet extends ConsumerWidget {
                 ),
                 icon: const Icon(Icons.pets_rounded),
                 label: const Text(
-                  'Activar con 30 Patitas',
+                  'Activar 30 dias - 30 Patitas',
                   style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                 ),
               ),
