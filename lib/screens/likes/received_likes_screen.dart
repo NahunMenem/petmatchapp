@@ -12,13 +12,27 @@ import '../../providers/patitas_provider.dart';
 import '../../providers/pets_provider.dart';
 import '../../widgets/patitas_insufficient_dialog.dart';
 
-class ReceivedLikesScreen extends ConsumerWidget {
+class ReceivedLikesScreen extends ConsumerStatefulWidget {
   const ReceivedLikesScreen({super.key});
 
   static const int unlockCost = 30;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ReceivedLikesScreen> createState() =>
+      _ReceivedLikesScreenState();
+}
+
+class _ReceivedLikesScreenState extends ConsumerState<ReceivedLikesScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(receivedLikesProvider);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final likesAsync = ref.watch(receivedLikesProvider);
     final walletAsync = ref.watch(patitasWalletProvider);
 
@@ -37,11 +51,11 @@ class ReceivedLikesScreen extends ConsumerWidget {
           onUnlock: () async {
             final wallet = ref.read(patitasWalletProvider).valueOrNull;
             final balance = wallet?.patitas ?? 0;
-            if (balance < unlockCost) {
+            if (balance < ReceivedLikesScreen.unlockCost) {
               showPatitasInsufficientDialog(
                 context,
                 currentPatitas: balance,
-                requiredPatitas: unlockCost,
+                requiredPatitas: ReceivedLikesScreen.unlockCost,
                 featureName: 'descubrir quien dio like',
               );
               return;
@@ -695,8 +709,7 @@ class _ReceivedLikeDetailScreenState
                 _InfoChip(label: _sizeLabel(like.size)),
               if (like.vaccinesUpToDate == true)
                 const _InfoChip(label: 'Vacunas al dia'),
-              if (like.sterilized == true)
-                const _InfoChip(label: 'Castrado/a'),
+              if (like.sterilized == true) const _InfoChip(label: 'Castrado/a'),
             ],
           ),
           const SizedBox(height: 18),
@@ -794,10 +807,9 @@ class _ReceivedLikeDetailScreenState
         message: result.isMatch
             ? 'Like devuelto. Hicieron match.'
             : 'Like devuelto correctamente.',
-        actionLabel:
-            result.isMatch && (result.conversationId ?? '').isNotEmpty
-                ? 'Abrir chat'
-                : null,
+        actionLabel: result.isMatch && (result.conversationId ?? '').isNotEmpty
+            ? 'Abrir chat'
+            : null,
         onAction: result.isMatch && (result.conversationId ?? '').isNotEmpty
             ? () => context.push('/chat/${result.conversationId}')
             : null,

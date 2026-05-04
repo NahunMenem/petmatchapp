@@ -1,4 +1,4 @@
-package com.petmatch.petmatch
+package com.pawmatch.com
 
 import io.flutter.embedding.android.FlutterActivity
 

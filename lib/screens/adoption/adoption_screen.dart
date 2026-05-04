@@ -26,8 +26,11 @@ class AdoptionScreen extends ConsumerStatefulWidget {
   ConsumerState<AdoptionScreen> createState() => _AdoptionScreenState();
 }
 
+enum _AdoptionViewMode { cards, list }
+
 class _AdoptionScreenState extends ConsumerState<AdoptionScreen> {
   bool _askedLocation = false;
+  _AdoptionViewMode _viewMode = _AdoptionViewMode.cards;
 
   @override
   void initState() {
@@ -176,9 +179,20 @@ class _AdoptionScreenState extends ConsumerState<AdoptionScreen> {
           ),
 
           // ── Lista de mascotas ────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+            child: _AdoptionViewToggle(
+              mode: _viewMode,
+              onChanged: (mode) => setState(() => _viewMode = mode),
+            ),
+          ),
+
           Expanded(
             child: cachedAdoptions != null
-                ? _AdoptionsList(adoptions: cachedAdoptions)
+                ? _AdoptionsBody(
+                    adoptions: cachedAdoptions,
+                    viewMode: _viewMode,
+                  )
                 : adoptionsAsync.when(
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
@@ -186,7 +200,10 @@ class _AdoptionScreenState extends ConsumerState<AdoptionScreen> {
                       message: 'No pudimos cargar las publicaciones',
                       onRetry: () => ref.invalidate(adoptionsProvider),
                     ),
-                    data: (adoptions) => _AdoptionsList(adoptions: adoptions),
+                    data: (adoptions) => _AdoptionsBody(
+                      adoptions: adoptions,
+                      viewMode: _viewMode,
+                    ),
                   ),
           ),
         ],
@@ -219,6 +236,646 @@ class _AdoptionScreenState extends ConsumerState<AdoptionScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) => const _MyAdoptionsSheet(),
+    );
+  }
+}
+
+class _AdoptionsBody extends StatelessWidget {
+  final List<AdoptionModel> adoptions;
+  final _AdoptionViewMode viewMode;
+
+  const _AdoptionsBody({
+    required this.adoptions,
+    required this.viewMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (viewMode) {
+      _AdoptionViewMode.cards => _AdoptionsSwipeStack(adoptions: adoptions),
+      _AdoptionViewMode.list => _AdoptionsList(adoptions: adoptions),
+    };
+  }
+}
+
+class _AdoptionViewToggle extends StatelessWidget {
+  final _AdoptionViewMode mode;
+  final ValueChanged<_AdoptionViewMode> onChanged;
+
+  const _AdoptionViewToggle({
+    required this.mode,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 42,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Row(
+        children: [
+          _ViewToggleOption(
+            icon: Icons.style_rounded,
+            label: 'Tarjetas',
+            selected: mode == _AdoptionViewMode.cards,
+            onTap: () => onChanged(_AdoptionViewMode.cards),
+          ),
+          _ViewToggleOption(
+            icon: Icons.view_list_rounded,
+            label: 'Lista',
+            selected: mode == _AdoptionViewMode.list,
+            onTap: () => onChanged(_AdoptionViewMode.list),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ViewToggleOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ViewToggleOption({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Material(
+        color: selected ? AppColors.primary : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 17,
+                  color: selected ? Colors.white : AppColors.textSecondary,
+                ),
+                const SizedBox(width: 7),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: selected ? Colors.white : AppColors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AdoptionsSwipeStack extends ConsumerStatefulWidget {
+  final List<AdoptionModel> adoptions;
+
+  const _AdoptionsSwipeStack({required this.adoptions});
+
+  @override
+  ConsumerState<_AdoptionsSwipeStack> createState() =>
+      _AdoptionsSwipeStackState();
+}
+
+class _AdoptionsSwipeStackState extends ConsumerState<_AdoptionsSwipeStack> {
+  final Set<String> _passedIds = <String>{};
+
+  List<AdoptionModel> get _visibleAdoptions => widget.adoptions
+      .where((adoption) => !_passedIds.contains(adoption.id))
+      .toList();
+
+  @override
+  void didUpdateWidget(covariant _AdoptionsSwipeStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final currentIds = widget.adoptions.map((adoption) => adoption.id).toSet();
+    _passedIds.removeWhere((id) => !currentIds.contains(id));
+  }
+
+  void _passCurrent() {
+    final visible = _visibleAdoptions;
+    if (visible.isEmpty) return;
+    setState(() => _passedIds.add(visible.first.id));
+  }
+
+  void _showDetail(AdoptionModel adoption) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.88,
+          minChildSize: 0.45,
+          maxChildSize: 0.95,
+          builder: (context, controller) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: ListView(
+                controller: controller,
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
+                children: [
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.divider,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                  _AdoptionCard(adoption: adoption),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _contact(AdoptionModel adoption) async {
+    final currentUserId = ref.read(authProvider).valueOrNull?.user?.id;
+    if (currentUserId == adoption.publisherId) {
+      AppSnackBar.info(
+        context,
+        message: 'Esta publicacion es tuya.',
+      );
+      return;
+    }
+
+    if (adoption.status != AdoptionStatus.available) {
+      AppSnackBar.warning(
+        context,
+        message: 'Esta mascota ya no esta disponible.',
+      );
+      return;
+    }
+
+    final phone = adoption.phone.trim();
+    if (phone.isNotEmpty) {
+      await _openAdoptionWhatsApp(adoption);
+      return;
+    }
+
+    await ref.read(adoptionServiceProvider).contactForAdoption(adoption.id);
+    if (!mounted) return;
+    AppSnackBar.success(
+      context,
+      title: 'Interes enviado',
+      message: 'Le avisamos al publicador que queres adoptar.',
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = _visibleAdoptions;
+
+    if (widget.adoptions.isEmpty) {
+      return const _EmptyAdoptions();
+    }
+
+    if (visible.isEmpty) {
+      return RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () async => ref.refresh(adoptionsProvider.future),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(24, 70, 24, 120),
+          children: [
+            const Icon(
+              Icons.check_circle_outline_rounded,
+              size: 72,
+              color: AppColors.success,
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Ya viste todas',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Toca actualizar o cambia los filtros para descubrir mas mascotas.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 18),
+            Center(
+              child: OutlinedButton.icon(
+                onPressed: () => setState(_passedIds.clear),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Ver de nuevo'),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final current = visible.first;
+    final next = visible.length > 1 ? visible[1] : null;
+
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () async => ref.refresh(adoptionsProvider.future),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 112),
+            children: [
+              SizedBox(
+                height: constraints.maxHeight - 120 > 460
+                    ? constraints.maxHeight - 120
+                    : 460,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (next != null)
+                      Transform.translate(
+                        offset: const Offset(0, -14),
+                        child: Transform.scale(
+                          scale: 0.94,
+                          child: _AdoptionSwipeCard(
+                            key: ValueKey('next-${next.id}'),
+                            adoption: next,
+                            disabled: true,
+                            onPass: _passCurrent,
+                            onShare: () {},
+                            onDetail: () {},
+                            onContact: () {},
+                          ),
+                        ),
+                      ),
+                    Dismissible(
+                      key: ValueKey('adoption-${current.id}'),
+                      direction: DismissDirection.horizontal,
+                      resizeDuration: null,
+                      movementDuration: const Duration(milliseconds: 180),
+                      onDismissed: (_) => _passCurrent(),
+                      child: _AdoptionSwipeCard(
+                        adoption: current,
+                        onPass: _passCurrent,
+                        onShare: () => _shareAdoptionFromContext(
+                          context,
+                          current,
+                        ),
+                        onDetail: () => _showDetail(current),
+                        onContact: () => _contact(current),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _AdoptionSwipeCard extends ConsumerWidget {
+  final AdoptionModel adoption;
+  final bool disabled;
+  final VoidCallback onPass;
+  final VoidCallback onShare;
+  final VoidCallback onDetail;
+  final VoidCallback onContact;
+
+  const _AdoptionSwipeCard({
+    super.key,
+    required this.adoption,
+    this.disabled = false,
+    required this.onPass,
+    required this.onShare,
+    required this.onDetail,
+    required this.onContact,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentUserId = ref.watch(authProvider).valueOrNull?.user?.id;
+    final isOwner = currentUserId == adoption.publisherId;
+    final canContact =
+        !isOwner && adoption.status == AdoptionStatus.available && !disabled;
+
+    return IgnorePointer(
+      ignoring: disabled,
+      child: Opacity(
+        opacity: disabled ? 0.72 : 1,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: AppColors.divider.withOpacity(0.8)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.10),
+                blurRadius: 28,
+                offset: const Offset(0, 16),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _AdoptionSwipePhoto(adoption: adoption),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.black.withOpacity(0.05),
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.72),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 14,
+                      left: 14,
+                      right: 14,
+                      child: Row(
+                        children: [
+                          _StatusBadge(
+                            label: adoption.statusLabel,
+                            onImage: true,
+                          ),
+                          const Spacer(),
+                          _SwipeIconButton(
+                            icon: Icons.info_outline_rounded,
+                            color: AppColors.textPrimary,
+                            onTap: onDetail,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      left: 18,
+                      right: 18,
+                      bottom: 18,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            adoption.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 34,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${adoption.typeLabel} · ${adoption.age} · ${_sizeLabel(adoption.size)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.88),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _SwipePill(
+                                icon: Icons.location_on_outlined,
+                                label:
+                                    adoption.distanceLabel ?? adoption.location,
+                              ),
+                              _SwipePill(
+                                icon: Icons.health_and_safety_outlined,
+                                label: adoption.healthStatus,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                child: Column(
+                  children: [
+                    Text(
+                      adoption.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _SwipeIconButton(
+                          icon: Icons.close_rounded,
+                          color: AppColors.dislikeRed,
+                          size: 54,
+                          onTap: onPass,
+                        ),
+                        _SwipeIconButton(
+                          icon: Icons.ios_share_rounded,
+                          color: AppColors.primary,
+                          onTap: onShare,
+                        ),
+                        _SwipeInterestButton(
+                          enabled: canContact,
+                          label: isOwner ? 'Tuya' : 'Me interesa',
+                          onTap: onContact,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AdoptionSwipePhoto extends StatelessWidget {
+  final AdoptionModel adoption;
+
+  const _AdoptionSwipePhoto({required this.adoption});
+
+  @override
+  Widget build(BuildContext context) {
+    final photo = adoption.mainPhoto.trim();
+    if (!_isValidUrl(photo)) {
+      return _photoPlaceholder(height: double.infinity);
+    }
+
+    return Image.network(
+      photo,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _photoPlaceholder(height: double.infinity),
+    );
+  }
+}
+
+class _SwipePill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _SwipePill({
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.48),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withOpacity(0.16)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.white),
+          const SizedBox(width: 6),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 190),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SwipeIconButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final double size;
+  final VoidCallback onTap;
+
+  const _SwipeIconButton({
+    required this.icon,
+    required this.color,
+    this.size = 46,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      shape: const CircleBorder(),
+      elevation: 7,
+      shadowColor: color.withOpacity(0.22),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Icon(icon, color: color, size: size * 0.48),
+        ),
+      ),
+    );
+  }
+}
+
+class _SwipeInterestButton extends StatelessWidget {
+  final bool enabled;
+  final String label;
+  final VoidCallback onTap;
+
+  const _SwipeInterestButton({
+    required this.enabled,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.only(left: 14),
+        child: SizedBox(
+          height: 52,
+          child: ElevatedButton.icon(
+            onPressed: enabled ? onTap : null,
+            icon: const Icon(Icons.volunteer_activism_outlined, size: 19),
+            label: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: AppColors.surfaceVariant,
+              disabledForegroundColor: AppColors.textSecondary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1357,23 +2014,32 @@ class _PublisherRow extends StatelessWidget {
 
 class _StatusBadge extends StatelessWidget {
   final String label;
+  final bool onImage;
 
-  const _StatusBadge({required this.label});
+  const _StatusBadge({
+    required this.label,
+    this.onImage = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: AppColors.success.withOpacity(0.12),
+        color: onImage
+            ? Colors.black.withOpacity(0.68)
+            : AppColors.success.withOpacity(0.12),
         borderRadius: BorderRadius.circular(999),
+        border:
+            onImage ? Border.all(color: Colors.white.withOpacity(0.22)) : null,
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: AppColors.success,
+        style: TextStyle(
+          color: onImage ? Colors.white : AppColors.success,
           fontSize: 12,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0,
         ),
       ),
     );
@@ -1691,6 +2357,82 @@ class _FiltersSheetState extends State<_FiltersSheet> {
       ),
     );
   }
+}
+
+Future<void> _shareAdoptionFromContext(
+  BuildContext context,
+  AdoptionModel adoption,
+) async {
+  final message = _adoptionShareText(adoption);
+  final box = context.findRenderObject() as RenderBox?;
+  final shareOrigin =
+      box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+
+  try {
+    final imageBytes = await _buildAdoptionShareCard(adoption);
+    final safeId = adoption.id.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '-');
+    final file = File(
+      '${Directory.systemTemp.path}/pawmatch-adopcion-$safeId.png',
+    );
+    await file.writeAsBytes(imageBytes, flush: true);
+
+    await Share.shareXFiles(
+      [
+        XFile(
+          file.path,
+          mimeType: 'image/png',
+          name: 'pawmatch-adopcion-$safeId.png',
+        ),
+      ],
+      text: message,
+      subject: '${adoption.name} en adopcion',
+      sharePositionOrigin: shareOrigin,
+    );
+  } catch (_) {
+    await Share.share(
+      message,
+      subject: '${adoption.name} en adopcion',
+    );
+  }
+}
+
+Future<void> _openAdoptionWhatsApp(AdoptionModel adoption) async {
+  final message = Uri.encodeComponent(
+    'Hola, vi en PawMatch la publicacion de ${adoption.name} en adopcion.',
+  );
+  final uri = Uri.parse(
+    'https://wa.me/${_normalizeAdoptionPhone(adoption.phone)}?text=$message',
+  );
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+}
+
+String _adoptionShareText(AdoptionModel adoption) {
+  final details = [
+    '${adoption.typeLabel} · ${adoption.age}',
+    if (adoption.distanceLabel != null) adoption.distanceLabel!,
+    _sizeLabel(adoption.size),
+    adoption.healthStatus,
+  ].join(' · ');
+  final photo = adoption.mainPhoto.trim();
+  final message = StringBuffer()
+    ..writeln('${adoption.name} busca hogar en PawMatch')
+    ..writeln(details)
+    ..writeln()
+    ..writeln(adoption.description.trim());
+
+  if (photo.isNotEmpty) {
+    message
+      ..writeln()
+      ..writeln(photo);
+  }
+
+  return message.toString();
+}
+
+String _normalizeAdoptionPhone(String phone) {
+  return phone.replaceAll(RegExp(r'[^0-9]'), '');
 }
 
 bool _isValidUrl(String url) =>

@@ -50,3 +50,6 @@ app.*.map.json
 
 # Private signing/auth keys
 *.p8
+*.jks
+*.keystore
+/android/key.properties

@@ -43,7 +43,8 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
     ref.watch(exploreVaccinatedOnlyProvider);
     ref.watch(exploreSterilizedOnlyProvider);
     ref.watch(
-      advancedFiltersProvider.select((state) => state.valueOrNull?.active ?? false),
+      advancedFiltersProvider
+          .select((state) => state.valueOrNull?.active ?? false),
     );
     _page = 1;
     return _fetch();
@@ -59,9 +60,8 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
     final sterilizedOnly = ref.read(exploreSterilizedOnlyProvider);
     final advancedFiltersActive =
         ref.read(advancedFiltersProvider).valueOrNull?.active ?? false;
-    final effectiveMaxDistanceKm = advancedFiltersActive
-        ? maxDistanceKm.clamp(10, 50)
-        : 10;
+    final effectiveMaxDistanceKm =
+        advancedFiltersActive ? maxDistanceKm.clamp(10, 50) : 10;
     final pets = await service.getExplorePets(
       type: type,
       breed: breed,
@@ -136,11 +136,7 @@ final matchPetProvider = StateProvider<PetModel?>((ref) => null);
 class ReceivedLikesNotifier extends AsyncNotifier<ReceivedLikesModel> {
   @override
   Future<ReceivedLikesModel> build() async {
-    try {
-      return await ref.read(petServiceProvider).getReceivedLikes();
-    } catch (_) {
-      return const ReceivedLikesModel(total: 0, unlocked: false, likes: []);
-    }
+    return ref.read(petServiceProvider).getReceivedLikes();
   }
 
   Future<void> unlock() async {

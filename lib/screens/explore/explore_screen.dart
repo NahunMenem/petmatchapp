@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/constants/pet_breed_options.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/app_snack_bar.dart';
 import '../../models/pet_model.dart';
@@ -64,7 +65,51 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     } catch (_) {}
   }
 
+  Future<bool> _ensureCanReact() async {
+    late final List<PetModel> myPets;
+    try {
+      myPets = await ref.read(myPetsProvider.future);
+    } catch (_) {
+      if (!mounted) return false;
+      AppSnackBar.error(
+        context,
+        message: 'No se pudieron verificar tus mascotas.',
+      );
+      return false;
+    }
+
+    final hasActivePet = myPets.any((pet) => pet.isActive);
+    if (hasActivePet) return true;
+
+    if (!mounted) return false;
+    AppSnackBar.warning(
+      context,
+      title: 'Agrega tu mascota',
+      message: 'Necesitas tener una mascota activa para dar like.',
+      actionLabel: 'Cargar',
+      onAction: () => context.push('/create-pet'),
+    );
+    return false;
+  }
+
+  Future<void> _sendLike() async {
+    if (!await _ensureCanReact()) return;
+
+    try {
+      await ref.read(exploreProvider.notifier).likeCurrentPet();
+      ref.invalidate(receivedLikesProvider);
+    } catch (_) {
+      if (!mounted) return;
+      AppSnackBar.error(
+        context,
+        message: 'No se pudo enviar el like.',
+      );
+    }
+  }
+
   Future<void> _sendSuperLike() async {
+    if (!await _ensureCanReact()) return;
+
     const cost = 10;
     final wallet = ref.read(patitasWalletProvider).valueOrNull;
     if ((wallet?.patitas ?? 0) < cost) {
@@ -137,9 +182,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                 onDislike: () {
                   ref.read(exploreProvider.notifier).dislikeCurrentPet();
                 },
-                onLike: () {
-                  ref.read(exploreProvider.notifier).likeCurrentPet();
-                },
+                onLike: _sendLike,
                 onSkip: () {
                   ref.read(exploreProvider.notifier).removeCurrent();
                 },
@@ -713,39 +756,6 @@ class _AdvancedFiltersSheet extends ConsumerStatefulWidget {
 }
 
 class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
-  static const List<String> _dogBreeds = [
-    'Labrador Retriever',
-    'Golden Retriever',
-    'Caniche',
-    'Bulldog',
-    'Bulldog Frances',
-    'Beagle',
-    'Boxer',
-    'Chihuahua',
-    'Cocker Spaniel',
-    'Dachshund',
-    'Doberman',
-    'Husky Siberiano',
-    'Mestizo',
-    'Pastor Aleman',
-    'Pug',
-    'Rottweiler',
-    'Shih Tzu',
-    'Yorkshire Terrier',
-  ];
-  static const List<String> _catBreeds = [
-    'Siames',
-    'Persa',
-    'Maine Coon',
-    'Angora',
-    'Bengali',
-    'British Shorthair',
-    'Esfinge',
-    'Mestizo',
-    'Ragdoll',
-    'Siberiano',
-  ];
-
   String? _selectedType;
   String _selectedBreed = '';
 
@@ -916,12 +926,6 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
   }
 
   List<String> _breedOptionsFor(String? type) {
-    final options = switch (type) {
-      'dog' => _dogBreeds,
-      'cat' => _catBreeds,
-      _ => [..._dogBreeds, ..._catBreeds],
-    };
-    final unique = options.toSet().toList()..sort();
-    return unique;
+    return PetBreedOptions.forType(type ?? '');
   }
 }
