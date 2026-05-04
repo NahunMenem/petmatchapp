@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/app_snack_bar.dart';
 import '../../models/notification_model.dart';
 import '../../providers/notification_provider.dart';
+import '../../providers/pets_provider.dart';
 
 class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
@@ -162,7 +163,7 @@ class _NotificationTile extends ConsumerWidget {
                 .markRead(notification.id);
           }
           if (!context.mounted) return;
-          _openAction(context, notification);
+          _openAction(context, ref, notification);
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -228,7 +229,11 @@ class _NotificationTile extends ConsumerWidget {
     );
   }
 
-  void _openAction(BuildContext context, NotificationModel notification) {
+  void _openAction(
+    BuildContext context,
+    WidgetRef ref,
+    NotificationModel notification,
+  ) {
     switch (notification.type) {
       case NotificationType.newMatch:
       case NotificationType.newMessage:
@@ -241,6 +246,9 @@ class _NotificationTile extends ConsumerWidget {
       case NotificationType.lostPetNearby:
       case NotificationType.lostAlertReach:
       case NotificationType.like:
+        ref.invalidate(receivedLikesProvider);
+        context.push('/likes-received');
+        break;
       case NotificationType.profileTip:
       case NotificationType.patitas:
         context.go('/home');

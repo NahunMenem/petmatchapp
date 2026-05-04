@@ -44,5 +44,5 @@ class AppStoreLinks {
   static const String ios =
       'https://apps.apple.com/search?term=PawMatch&entity=software';
   static const String android =
-      'https://play.google.com/store/apps/details?id=com.petmatch.petmatch';
+      'https://play.google.com/store/apps/details?id=com.pawmatch.com';
 }

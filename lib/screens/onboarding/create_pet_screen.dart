@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../core/constants/pet_breed_options.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/app_snack_bar.dart';
 import '../../core/utils/validators.dart';
@@ -31,59 +32,7 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
   bool _vaccinesUpToDate = false;
   List<File> _photos = [];
   bool _loading = false;
-  static const _otherBreed = 'Otro';
-
-  final List<String> _dogBreeds = [
-    'Mestizo',
-    'Golden Retriever',
-    'Labrador',
-    'Labrador Retriever',
-    'Pastor Aleman',
-    'Caniche / Poodle',
-    'Bulldog',
-    'Bulldog Frances',
-    'Beagle',
-    'Boxer',
-    'Rottweiler',
-    'Husky Siberiano',
-    'Border Collie',
-    'Dachshund / Salchicha',
-    'Chihuahua',
-    'Yorkshire Terrier',
-    'Shih Tzu',
-    'Schnauzer',
-    'Cocker Spaniel',
-    'Pitbull',
-    'Doberman',
-    'Akita',
-    'Galgo',
-    'Bichon Frise',
-    'Pastor Alemán',
-    'Dálmata',
-    'Mestizo',
-    'Otro',
-  ];
-
-  final List<String> _catBreeds = [
-    'Mestizo',
-    'Comun Europeo',
-    'Persa',
-    'Siamés',
-    'Maine Coon',
-    'Bengalí',
-    'Ragdoll',
-    'Britanico de pelo corto',
-    'Azul Ruso',
-    'Sphynx',
-    'Angora',
-    'Bosque de Noruega',
-    'Scottish Fold',
-    'Abisinio',
-    'Birmano',
-    'Común Europeo',
-    'Mestizo',
-    'Otro',
-  ];
+  static const _otherBreed = PetBreedOptions.other;
 
   final List<String> _ages = [
     '2 meses',
@@ -178,10 +127,10 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final breeds = (_selectedType == PetType.dog ? _dogBreeds : _catBreeds)
-        .where((breed) => !breed.contains('Ã'))
-        .toSet()
-        .toList();
+    final breeds = PetBreedOptions.forType(
+      _selectedType == PetType.dog ? 'dog' : 'cat',
+      includeOther: true,
+    );
 
     return Scaffold(
       appBar: AppBar(
