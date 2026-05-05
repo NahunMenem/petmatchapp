@@ -41,4 +41,24 @@ class ChatService {
   Future<void> markAsRead(String conversationId) async {
     await _api.patch('${ApiConstants.conversations}/$conversationId/read');
   }
+
+  Future<void> reportConversation(
+    String conversationId, {
+    String reason = 'Contenido inapropiado',
+  }) async {
+    await _api.post(
+      ApiConstants.reportConversation,
+      data: {'conversation_id': conversationId, 'reason': reason},
+    );
+  }
+
+  Future<void> blockConversationUser(
+    String conversationId, {
+    String reason = 'Usuario abusivo',
+  }) async {
+    await _api.post(
+      ApiConstants.blockConversationUser,
+      data: {'conversation_id': conversationId, 'reason': reason},
+    );
+  }
 }

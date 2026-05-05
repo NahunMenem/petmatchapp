@@ -144,6 +144,40 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     }
   }
 
+  Future<void> _reportPet(PetModel pet) async {
+    try {
+      await ref.read(petServiceProvider).reportPet(pet.id);
+      ref.read(exploreProvider.notifier).removeCurrent();
+      if (!mounted) return;
+      AppSnackBar.success(
+        context,
+        title: 'Reporte enviado',
+        message:
+            'Gracias. Revisaremos este contenido dentro de las proximas 24 horas.',
+      );
+    } catch (_) {
+      if (!mounted) return;
+      AppSnackBar.error(context, message: 'No se pudo enviar el reporte.');
+    }
+  }
+
+  Future<void> _blockPetOwner(PetModel pet) async {
+    try {
+      await ref.read(petServiceProvider).blockPetOwner(pet.id);
+      ref.read(exploreProvider.notifier).removeCurrent();
+      ref.invalidate(conversationsProvider);
+      if (!mounted) return;
+      AppSnackBar.success(
+        context,
+        title: 'Usuario bloqueado',
+        message: 'Ya no veras sus publicaciones ni chats.',
+      );
+    } catch (_) {
+      if (!mounted) return;
+      AppSnackBar.error(context, message: 'No se pudo bloquear al usuario.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final petsAsync = ref.watch(exploreProvider);
@@ -186,6 +220,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                 onSkip: () {
                   ref.read(exploreProvider.notifier).removeCurrent();
                 },
+                onReport: _reportPet,
+                onBlock: _blockPetOwner,
               );
             },
           ),
@@ -225,6 +261,8 @@ class _SwipeView extends StatelessWidget {
   final VoidCallback onDislike;
   final VoidCallback onLike;
   final VoidCallback onSkip;
+  final ValueChanged<PetModel> onReport;
+  final ValueChanged<PetModel> onBlock;
 
   const _SwipeView({
     required this.pets,
@@ -232,10 +270,13 @@ class _SwipeView extends StatelessWidget {
     required this.onDislike,
     required this.onLike,
     required this.onSkip,
+    required this.onReport,
+    required this.onBlock,
   });
 
   @override
   Widget build(BuildContext context) {
+    final currentPet = pets.first;
     return Column(
       children: [
         Expanded(
@@ -262,7 +303,15 @@ class _SwipeView extends StatelessWidget {
                   movementDuration: const Duration(milliseconds: 180),
                   onDismissed: (_) => onSkip(),
                   child: PetCard(
-                    pet: pets.first,
+                    pet: currentPet,
+                  ),
+                ),
+                Positioned(
+                  right: 10,
+                  top: 10,
+                  child: _ModerationMenu(
+                    onReport: () => onReport(currentPet),
+                    onBlock: () => onBlock(currentPet),
                   ),
                 ),
               ],
@@ -298,6 +347,60 @@ class _SwipeView extends StatelessWidget {
                 onTap: onLike,
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ModerationMenu extends StatelessWidget {
+  final VoidCallback onReport;
+  final VoidCallback onBlock;
+
+  const _ModerationMenu({
+    required this.onReport,
+    required this.onBlock,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      tooltip: 'Opciones',
+      icon: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.92),
+          shape: BoxShape.circle,
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x22000000),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child:
+            const Icon(Icons.more_horiz_rounded, color: AppColors.textPrimary),
+      ),
+      onSelected: (value) {
+        if (value == 'report') onReport();
+        if (value == 'block') onBlock();
+      },
+      itemBuilder: (_) => const [
+        PopupMenuItem(
+          value: 'report',
+          child: ListTile(
+            leading: Icon(Icons.flag_outlined, color: AppColors.error),
+            title: Text('Reportar contenido'),
+          ),
+        ),
+        PopupMenuItem(
+          value: 'block',
+          child: ListTile(
+            leading: Icon(Icons.block_rounded, color: AppColors.error),
+            title: Text('Bloquear usuario'),
           ),
         ),
       ],

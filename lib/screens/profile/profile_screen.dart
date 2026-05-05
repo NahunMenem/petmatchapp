@@ -234,6 +234,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     if (context.mounted) context.go('/login');
                   },
                 ),
+                _OptionTile(
+                  icon: Icons.delete_forever_outlined,
+                  label: 'Eliminar cuenta',
+                  color: AppColors.error,
+                  onTap: () => _confirmDeleteAccount(context, ref),
+                ),
                 const SizedBox(height: 32),
               ],
             ),
@@ -241,6 +247,44 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmDeleteAccount(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Eliminar cuenta'),
+        content: const Text(
+          'Esto elimina tu perfil, mascotas, publicaciones, matches, chats, Patitas y datos asociados de forma permanente.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Eliminar definitivamente'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await ref.read(authProvider.notifier).deleteAccount();
+      if (context.mounted) context.go('/login');
+    } catch (_) {
+      if (!context.mounted) return;
+      AppSnackBar.error(
+        context,
+        message: 'No se pudo eliminar la cuenta.',
+      );
+    }
   }
 
   Future<void> _confirmDeletePet(

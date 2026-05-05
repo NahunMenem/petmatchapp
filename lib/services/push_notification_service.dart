@@ -19,8 +19,7 @@ class PushNotificationService {
 
   static const String _androidChannelId = 'pawmatch_alerts_v2';
   static const String _androidChannelName = 'PawMatch';
-  static const String _androidChannelDescription =
-      'Notificaciones de PawMatch';
+  static const String _androidChannelDescription = 'Notificaciones de PawMatch';
   static const fln.RawResourceAndroidNotificationSound _androidSound =
       fln.RawResourceAndroidNotificationSound('alerta');
   static const String _iosSound = 'alerta.caf';

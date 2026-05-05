@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/app_snack_bar.dart';
 import '../../models/message_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/chat_provider.dart';
@@ -62,6 +63,42 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     _scrollToBottom();
   }
 
+  Future<void> _reportConversation() async {
+    try {
+      await ref
+          .read(chatServiceProvider)
+          .reportConversation(widget.conversationId);
+      if (!mounted) return;
+      AppSnackBar.success(
+        context,
+        title: 'Reporte enviado',
+        message: 'Revisaremos la conversacion dentro de las proximas 24 horas.',
+      );
+    } catch (_) {
+      if (!mounted) return;
+      AppSnackBar.error(context, message: 'No se pudo enviar el reporte.');
+    }
+  }
+
+  Future<void> _blockUser() async {
+    try {
+      await ref
+          .read(chatServiceProvider)
+          .blockConversationUser(widget.conversationId);
+      ref.invalidate(conversationsProvider);
+      if (!mounted) return;
+      AppSnackBar.success(
+        context,
+        title: 'Usuario bloqueado',
+        message: 'Ya no veras sus mensajes ni publicaciones.',
+      );
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) return;
+      AppSnackBar.error(context, message: 'No se pudo bloquear al usuario.');
+    }
+  }
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollCtrl.hasClients) {
@@ -84,6 +121,31 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFFF7EDE7),
+        actions: [
+          PopupMenuButton<String>(
+            tooltip: 'Opciones',
+            onSelected: (value) {
+              if (value == 'report') _reportConversation();
+              if (value == 'block') _blockUser();
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'report',
+                child: ListTile(
+                  leading: Icon(Icons.flag_outlined, color: AppColors.error),
+                  title: Text('Reportar chat'),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'block',
+                child: ListTile(
+                  leading: Icon(Icons.block_rounded, color: AppColors.error),
+                  title: Text('Bloquear usuario'),
+                ),
+              ),
+            ],
+          ),
+        ],
         title: conv != null
             ? Row(
                 children: [
@@ -142,8 +204,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                 ),
               ),
               child: messagesAsync.when(
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(child: Text('Error: $e')),
                 data: (messages) {
                   _markConversationAsRead();

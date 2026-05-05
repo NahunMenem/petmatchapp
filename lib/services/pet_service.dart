@@ -75,7 +75,8 @@ class PetService {
   }
 
   Future<SwipeResult> likePet(String petId) async {
-    final response = await _api.post(ApiConstants.like, data: {'pet_id': petId});
+    final response =
+        await _api.post(ApiConstants.like, data: {'pet_id': petId});
     return SwipeResult.fromJson(response.data as Map<String, dynamic>);
   }
 
@@ -89,6 +90,22 @@ class PetService {
 
   Future<void> dislikePet(String petId) async {
     await _api.post(ApiConstants.dislike, data: {'pet_id': petId});
+  }
+
+  Future<void> reportPet(String petId,
+      {String reason = 'Contenido inapropiado'}) async {
+    await _api.post(
+      ApiConstants.reportPet,
+      data: {'pet_id': petId, 'reason': reason},
+    );
+  }
+
+  Future<void> blockPetOwner(String petId,
+      {String reason = 'Usuario abusivo'}) async {
+    await _api.post(
+      ApiConstants.blockPetOwner,
+      data: {'pet_id': petId, 'reason': reason},
+    );
   }
 
   Future<ReceivedLikesModel> getReceivedLikes() async {

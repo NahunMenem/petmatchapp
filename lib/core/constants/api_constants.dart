@@ -8,10 +8,12 @@ class ApiConstants {
   static const String login = '/auth/login';
   static const String register = '/auth/register';
   static const String googleAuth = '/auth/google';
+  static const String appleAuth = '/auth/apple';
   static const String refreshToken = '/auth/refresh';
   static const String me = '/auth/me';
   static const String updateLocation = '/auth/me/location';
   static const String myReferral = '/auth/referral/me';
+  static const String deleteAccount = '/auth/me';
 
   // App config
   static const String appVersion = '/app/version';
@@ -23,6 +25,8 @@ class ApiConstants {
   static const String like = '/pets/like';
   static const String superLike = '/pets/super-like';
   static const String dislike = '/pets/dislike';
+  static const String reportPet = '/pets/report';
+  static const String blockPetOwner = '/pets/block-owner';
   static const String likesReceived = '/pets/likes-received';
   static const String unlockLikesReceived = '/pets/likes-received/unlock';
 
@@ -32,6 +36,8 @@ class ApiConstants {
   // Chat
   static const String conversations = '/chat/conversations';
   static const String messages = '/chat/messages';
+  static const String reportConversation = '/chat/report';
+  static const String blockConversationUser = '/chat/block-user';
 
   // Adoption
   static const String adoptions = '/adoptions';

@@ -1,11 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/app_snack_bar.dart';
 import '../../core/utils/validators.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/apple_button.dart';
 import '../../widgets/brand_logo.dart';
 import '../../widgets/google_button.dart';
 import '../../widgets/primary_button.dart';
@@ -24,6 +28,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscurePass = true;
   bool _loadingEmail = false;
   bool _loadingGoogle = false;
+  bool _loadingApple = false;
+  bool _termsAccepted = false;
 
   @override
   void dispose() {
@@ -43,9 +49,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _loginWithGoogle() async {
+    if (!_ensureTermsAccepted()) return;
     setState(() => _loadingGoogle = true);
-    await ref.read(authProvider.notifier).loginWithGoogle();
+    await ref
+        .read(authProvider.notifier)
+        .loginWithGoogle(termsAccepted: _termsAccepted);
     if (mounted) setState(() => _loadingGoogle = false);
+  }
+
+  Future<void> _loginWithApple() async {
+    if (!_ensureTermsAccepted()) return;
+    setState(() => _loadingApple = true);
+    await ref
+        .read(authProvider.notifier)
+        .loginWithApple(termsAccepted: _termsAccepted);
+    if (mounted) setState(() => _loadingApple = false);
+  }
+
+  bool _ensureTermsAccepted() {
+    if (_termsAccepted) return true;
+    AppSnackBar.warning(
+      context,
+      title: 'Acepta los terminos',
+      message:
+          'Para crear una cuenta con Google o Apple tenes que aceptar los terminos.',
+    );
+    return false;
+  }
+
+  Future<void> _openLegal(String path) async {
+    final uri = Uri.parse('https://pawmatch.app/$path');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   @override
@@ -64,6 +100,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             setState(() {
               _loadingEmail = false;
               _loadingGoogle = false;
+              _loadingApple = false;
             });
           }
           AppSnackBar.error(
@@ -74,8 +111,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
     });
 
-    final checkingSession =
-        authState.isLoading && !_loadingEmail && !_loadingGoogle;
+    final checkingSession = authState.isLoading &&
+        !_loadingEmail &&
+        !_loadingGoogle &&
+        !_loadingApple;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF2EA),
@@ -154,9 +193,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     label: _loadingGoogle
                                         ? 'Conectando...'
                                         : 'Continuar con Google',
-                                    onPressed: _loadingEmail || _loadingGoogle
+                                    onPressed: _loadingEmail ||
+                                            _loadingGoogle ||
+                                            _loadingApple
                                         ? null
                                         : _loginWithGoogle,
+                                  ),
+                                  if (Platform.isIOS) ...[
+                                    const SizedBox(height: 12),
+                                    AppleButton(
+                                      label: _loadingApple
+                                          ? 'Conectando...'
+                                          : 'Continuar con Apple',
+                                      onPressed: _loadingEmail ||
+                                              _loadingGoogle ||
+                                              _loadingApple
+                                          ? null
+                                          : _loginWithApple,
+                                    ),
+                                  ],
+                                  const SizedBox(height: 10),
+                                  _TermsConsent(
+                                    value: _termsAccepted,
+                                    onChanged: (value) => setState(
+                                      () => _termsAccepted = value ?? false,
+                                    ),
+                                    onTerms: () => _openLegal('terminos.html'),
+                                    onPrivacy: () =>
+                                        _openLegal('privacidad.html'),
                                   ),
                                   const SizedBox(height: 18),
                                   const _DividerLabel(),
@@ -198,7 +262,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   PrimaryButton(
                                     label: 'Ingresar',
                                     isLoading: _loadingEmail,
-                                    onPressed: _loadingEmail || _loadingGoogle
+                                    onPressed: _loadingEmail ||
+                                            _loadingGoogle ||
+                                            _loadingApple
                                         ? null
                                         : _login,
                                   ),
@@ -230,7 +296,74 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return 'Sin conexión al servidor';
     }
     if (text.contains('Google')) return 'No se pudo ingresar con Google';
+    if (text.contains('Apple')) return 'No se pudo ingresar con Apple';
+    if (text.contains('terminos')) return 'Tenes que aceptar los terminos';
     return 'No se pudo iniciar sesión';
+  }
+}
+
+class _TermsConsent extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool?> onChanged;
+  final VoidCallback onTerms;
+  final VoidCallback onPrivacy;
+
+  const _TermsConsent({
+    required this.value,
+    required this.onChanged,
+    required this.onTerms,
+    required this.onPrivacy,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Checkbox(value: value, onChanged: onChanged),
+        Expanded(
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              const Text(
+                'Acepto los ',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              InkWell(
+                onTap: onTerms,
+                child: const Text(
+                  'Terminos y EULA',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const Text(
+                ' y la ',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              InkWell(
+                onTap: onPrivacy,
+                child: const Text(
+                  'Privacidad',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const Text(
+                '. PawMatch tiene tolerancia cero al contenido inapropiado.',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 

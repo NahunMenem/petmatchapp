@@ -76,7 +76,12 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     });
   }
 
-  Future<void> register(String name, String email, String password) async {
+  Future<void> register(
+    String name,
+    String email,
+    String password, {
+    bool termsAccepted = false,
+  }) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final service = ref.read(authServiceProvider);
@@ -84,6 +89,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         name: name,
         email: email,
         password: password,
+        termsAccepted: termsAccepted,
         referralCode: null,
       );
       return AuthState(status: AuthStatus.authenticated, user: user);
@@ -95,6 +101,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     String email,
     String password, {
     String? referralCode,
+    bool termsAccepted = false,
   }) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
@@ -103,22 +110,56 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
         name: name,
         email: email,
         password: password,
+        termsAccepted: termsAccepted,
         referralCode: referralCode,
       );
       return AuthState(status: AuthStatus.authenticated, user: user);
     });
   }
 
-  Future<void> loginWithGoogle({String? referralCode}) async {
+  Future<void> loginWithGoogle({
+    String? referralCode,
+    bool termsAccepted = false,
+  }) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final service = ref.read(authServiceProvider);
-      final user = await service.signInWithGoogle(referralCode: referralCode);
+      final user = await service.signInWithGoogle(
+        referralCode: referralCode,
+        termsAccepted: termsAccepted,
+      );
       if (user == null) {
         return const AuthState(status: AuthStatus.unauthenticated);
       }
       return AuthState(status: AuthStatus.authenticated, user: user);
     });
+  }
+
+  Future<void> loginWithApple({
+    String? referralCode,
+    bool termsAccepted = false,
+  }) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final service = ref.read(authServiceProvider);
+      final user = await service.signInWithApple(
+        referralCode: referralCode,
+        termsAccepted: termsAccepted,
+      );
+      if (user == null) {
+        return const AuthState(status: AuthStatus.unauthenticated);
+      }
+      return AuthState(status: AuthStatus.authenticated, user: user);
+    });
+  }
+
+  Future<void> deleteAccount() async {
+    final service = ref.read(authServiceProvider);
+    await PushNotificationService.instance.unregisterDevice();
+    await service.deleteAccount();
+    state = const AsyncValue.data(
+      AuthState(status: AuthStatus.unauthenticated),
+    );
   }
 
   Future<void> logout() async {

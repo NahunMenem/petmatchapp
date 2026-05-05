@@ -73,7 +73,8 @@ class ReceivedLikesModel {
       total: json['total'] as int? ?? 0,
       unlocked: json['unlocked'] as bool? ?? false,
       likes: (json['likes'] as List<dynamic>? ?? [])
-          .map((item) => ReceivedLikeModel.fromJson(item as Map<String, dynamic>))
+          .map((item) =>
+              ReceivedLikeModel.fromJson(item as Map<String, dynamic>))
           .toList(),
     );
   }

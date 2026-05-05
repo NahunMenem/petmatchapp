@@ -24,7 +24,8 @@ class _PetCardState extends State<PetCard> {
       return;
     }
 
-    final photoCount = widget.pet.photos.isNotEmpty ? widget.pet.photos.length : 1;
+    final photoCount =
+        widget.pet.photos.isNotEmpty ? widget.pet.photos.length : 1;
     if (_currentPhoto >= photoCount) {
       _currentPhoto = 0;
     }
@@ -60,11 +61,9 @@ class _PetCardState extends State<PetCard> {
             },
             child: _PetPhoto(photoUrl: photos[_currentPhoto]),
           ),
-
           const DecoratedBox(
             decoration: BoxDecoration(gradient: AppColors.cardOverlay),
           ),
-
           Positioned(
             left: 20,
             right: 20,
@@ -162,7 +161,6 @@ class _PetCardState extends State<PetCard> {
               ],
             ),
           ),
-
           if (photos.length > 1)
             Positioned(
               top: 14,
@@ -186,7 +184,6 @@ class _PetCardState extends State<PetCard> {
                 }).toList(),
               ),
             ),
-
           if (photos.length > 1)
             Positioned(
               left: 20,

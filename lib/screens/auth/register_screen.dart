@@ -1,10 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/theme/app_colors.dart';
 import '../../core/utils/app_snack_bar.dart';
 import '../../core/utils/validators.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/apple_button.dart';
 import '../../widgets/brand_logo.dart';
 import '../../widgets/google_button.dart';
 import '../../widgets/primary_button.dart';
@@ -24,6 +29,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _referralCtrl = TextEditingController();
   bool _obscurePass = true;
   bool _loading = false;
+  bool _termsAccepted = false;
 
   @override
   void dispose() {
@@ -36,6 +42,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!_ensureTermsAccepted()) return;
     setState(() => _loading = true);
     await ref.read(authProvider.notifier).registerWithReferral(
           _nameCtrl.text.trim(),
@@ -44,8 +51,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           referralCode: _referralCtrl.text.trim().isEmpty
               ? null
               : _referralCtrl.text.trim(),
+          termsAccepted: _termsAccepted,
         );
     if (mounted) setState(() => _loading = false);
+  }
+
+  bool _ensureTermsAccepted() {
+    if (_termsAccepted) return true;
+    AppSnackBar.warning(
+      context,
+      title: 'Acepta los terminos',
+      message:
+          'Tenes que aceptar los Terminos/EULA y la Politica de Privacidad.',
+    );
+    return false;
+  }
+
+  Future<void> _openLegal(String path) async {
+    final uri = Uri.parse('https://pawmatch.app/$path');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   @override
@@ -62,12 +88,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           final errorText = e.toString();
           final msg = errorText.contains('Codigo de referido invalido')
               ? 'El codigo de referido no es valido.'
-              : errorText.contains('400')
-                  ? 'Ya existe una cuenta con ese email'
-                  : errorText.contains('SocketException') ||
-                          errorText.contains('Connection')
-                      ? 'Sin conexion al servidor'
-                      : 'Error al crear la cuenta';
+              : errorText.contains('terminos')
+                  ? 'Tenes que aceptar los terminos'
+                  : errorText.contains('400')
+                      ? 'Ya existe una cuenta con ese email'
+                      : errorText.contains('SocketException') ||
+                              errorText.contains('Connection')
+                          ? 'Sin conexion al servidor'
+                          : 'Error al crear la cuenta';
           AppSnackBar.error(
             context,
             message: msg,
@@ -165,6 +193,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 28),
+                _TermsConsent(
+                  value: _termsAccepted,
+                  onChanged: (value) => setState(
+                    () => _termsAccepted = value ?? false,
+                  ),
+                  onTerms: () => _openLegal('terminos.html'),
+                  onPrivacy: () => _openLegal('privacidad.html'),
+                ),
+                const SizedBox(height: 18),
                 PrimaryButton(
                   label: 'Crear cuenta',
                   onPressed: _loading ? null : _register,
@@ -189,18 +226,99 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   label: 'Registrarse con Google',
                   onPressed: _loading
                       ? null
-                      : () => ref.read(authProvider.notifier).loginWithGoogle(
-                            referralCode: _referralCtrl.text.trim().isEmpty
-                                ? null
-                                : _referralCtrl.text.trim(),
-                          ),
+                      : () {
+                          if (!_ensureTermsAccepted()) return;
+                          ref.read(authProvider.notifier).loginWithGoogle(
+                                referralCode: _referralCtrl.text.trim().isEmpty
+                                    ? null
+                                    : _referralCtrl.text.trim(),
+                                termsAccepted: _termsAccepted,
+                              );
+                        },
                 ),
+                if (Platform.isIOS) ...[
+                  const SizedBox(height: 12),
+                  AppleButton(
+                    label: 'Registrarse con Apple',
+                    onPressed: _loading
+                        ? null
+                        : () {
+                            if (!_ensureTermsAccepted()) return;
+                            ref.read(authProvider.notifier).loginWithApple(
+                                  referralCode:
+                                      _referralCtrl.text.trim().isEmpty
+                                          ? null
+                                          : _referralCtrl.text.trim(),
+                                  termsAccepted: _termsAccepted,
+                                );
+                          },
+                  ),
+                ],
                 const SizedBox(height: 32),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _TermsConsent extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool?> onChanged;
+  final VoidCallback onTerms;
+  final VoidCallback onPrivacy;
+
+  const _TermsConsent({
+    required this.value,
+    required this.onChanged,
+    required this.onTerms,
+    required this.onPrivacy,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Checkbox(value: value, onChanged: onChanged),
+        Expanded(
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              const Text('Acepto los ', style: TextStyle(fontSize: 12)),
+              InkWell(
+                onTap: onTerms,
+                child: const Text(
+                  'Terminos/EULA',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const Text(' y la ', style: TextStyle(fontSize: 12)),
+              InkWell(
+                onTap: onPrivacy,
+                child: const Text(
+                  'Privacidad',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const Text(
+                '. Tolerancia cero al contenido inapropiado.',
+                style: TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
