@@ -68,7 +68,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _openLegal(String path) async {
-    final uri = Uri.parse('https://pawmatch.app/$path');
+    final uri = Uri.parse('https://pawmatch.com.ar/$path');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
