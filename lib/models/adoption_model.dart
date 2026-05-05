@@ -9,6 +9,7 @@ class AdoptionModel {
   final String type; // 'dog' | 'cat'
   final String age;
   final String? breed;
+  final String? sex; // 'male' | 'female'
   final String size;
   final String healthStatus;
   final String description;
@@ -30,6 +31,7 @@ class AdoptionModel {
     required this.type,
     required this.age,
     this.breed,
+    this.sex,
     required this.size,
     required this.healthStatus,
     required this.description,
@@ -68,6 +70,12 @@ class AdoptionModel {
 
   String get typeLabel => type == 'dog' ? 'Perro' : 'Gato';
 
+  String get sexLabel {
+    if (sex == 'male') return 'Macho';
+    if (sex == 'female') return 'Hembra';
+    return 'Sexo no indicado';
+  }
+
   factory AdoptionModel.fromJson(Map<String, dynamic> json) {
     AdoptionStatus parseStatus(String s) {
       switch (s) {
@@ -89,6 +97,7 @@ class AdoptionModel {
       type: json['type'] as String,
       age: json['age'] as String,
       breed: json['breed'] as String?,
+      sex: json['sex'] as String?,
       size: json['size'] as String,
       healthStatus: json['health_status'] as String,
       description: json['description'] as String,
@@ -112,6 +121,7 @@ class AdoptionModel {
         'type': type,
         'age': age,
         'breed': breed,
+        'sex': sex,
         'size': size,
         'health_status': healthStatus,
         'description': description,

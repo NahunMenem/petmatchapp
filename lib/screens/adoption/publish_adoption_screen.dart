@@ -30,6 +30,7 @@ class _PublishAdoptionScreenState extends ConsumerState<PublishAdoptionScreen> {
   final _placesService = GooglePlacesService();
 
   String _type = 'dog';
+  String _sex = 'female';
   String? _age;
   String _size = 'medium';
   String _healthStatus = 'Vacunado';
@@ -217,6 +218,7 @@ class _PublishAdoptionScreenState extends ConsumerState<PublishAdoptionScreen> {
       await service.publishAdoption({
         'name': _nameCtrl.text.trim(),
         'type': _type,
+        'sex': _sex,
         'age': _age,
         'size': _size,
         'health_status': _healthStatus,
@@ -306,6 +308,25 @@ class _PublishAdoptionScreenState extends ConsumerState<PublishAdoptionScreen> {
                   label: '🐱 Gato',
                   selected: _type == 'cat',
                   onTap: () => setState(() => _type = 'cat'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            Text('Sexo', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _SizeButton(
+                  label: 'Macho',
+                  selected: _sex == 'male',
+                  onTap: () => setState(() => _sex = 'male'),
+                ),
+                const SizedBox(width: 8),
+                _SizeButton(
+                  label: 'Hembra',
+                  selected: _sex == 'female',
+                  onTap: () => setState(() => _sex = 'female'),
                 ),
               ],
             ),

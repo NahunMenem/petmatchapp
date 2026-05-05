@@ -144,7 +144,8 @@ class _AdoptionScreenState extends ConsumerState<AdoptionScreen> {
                     label: 'Todos',
                     selected: filters.type == null &&
                         filters.maxDistanceKm == 15 &&
-                        filters.size == null,
+                        filters.size == null &&
+                        filters.sex == null,
                     onTap: () => ref
                         .read(adoptionFiltersProvider.notifier)
                         .state = const AdoptionFilters(),
@@ -172,6 +173,22 @@ class _AdoptionScreenState extends ConsumerState<AdoptionScreen> {
                     onTap: () => ref
                         .read(adoptionFiltersProvider.notifier)
                         .update((s) => s.copyWith(maxDistanceKm: 5)),
+                  ),
+                  const SizedBox(width: 8),
+                  _TypeFilterChip(
+                    label: 'Macho',
+                    selected: filters.sex == 'male',
+                    onTap: () => ref
+                        .read(adoptionFiltersProvider.notifier)
+                        .update((s) => s.copyWith(sex: 'male')),
+                  ),
+                  const SizedBox(width: 8),
+                  _TypeFilterChip(
+                    label: 'Hembra',
+                    selected: filters.sex == 'female',
+                    onTap: () => ref
+                        .read(adoptionFiltersProvider.notifier)
+                        .update((s) => s.copyWith(sex: 'female')),
                   ),
                 ],
               ),
@@ -664,7 +681,7 @@ class _AdoptionSwipeCard extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${adoption.typeLabel} · ${adoption.age} · ${_sizeLabel(adoption.size)}',
+                            '${adoption.typeLabel} · ${adoption.sexLabel} · ${adoption.age} · ${_sizeLabel(adoption.size)}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -1149,7 +1166,7 @@ class _AdoptionCard extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${adoption.typeLabel} · ${adoption.age}',
+                            '${adoption.typeLabel} · ${adoption.sexLabel} · ${adoption.age}',
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyMedium
@@ -1383,7 +1400,7 @@ class _AdoptionCard extends ConsumerWidget {
 
   String _adoptionShareText(AdoptionModel adoption) {
     final details = [
-      '${adoption.typeLabel} · ${adoption.age}',
+      '${adoption.typeLabel} · ${adoption.sexLabel} · ${adoption.age}',
       if (adoption.distanceLabel != null) adoption.distanceLabel!,
       _sizeLabel(adoption.size),
       adoption.healthStatus,
@@ -2341,6 +2358,38 @@ class _FiltersSheetState extends State<_FiltersSheet> {
               );
             }).toList(),
           ),
+          const SizedBox(height: 18),
+          Text('Sexo', style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: [
+              ('Macho', 'male'),
+              ('Hembra', 'female'),
+            ].map((entry) {
+              final selected = _filters.sex == entry.$2;
+              return FilterChip(
+                label: Text(entry.$1),
+                labelStyle: TextStyle(
+                  color: selected ? AppColors.primary : AppColors.textSecondary,
+                  fontWeight: FontWeight.w700,
+                ),
+                backgroundColor: Colors.white,
+                selectedColor: AppColors.primary.withOpacity(0.14),
+                side: BorderSide(
+                  color: selected ? AppColors.primary : AppColors.divider,
+                ),
+                checkmarkColor: AppColors.primary,
+                selected: selected,
+                onSelected: (selected) => setState(
+                  () => _filters = _filters.copyWith(
+                    sex: selected ? entry.$2 : null,
+                    clearSex: !selected,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -2410,7 +2459,7 @@ Future<void> _openAdoptionWhatsApp(AdoptionModel adoption) async {
 
 String _adoptionShareText(AdoptionModel adoption) {
   final details = [
-    '${adoption.typeLabel} · ${adoption.age}',
+    '${adoption.typeLabel} · ${adoption.sexLabel} · ${adoption.age}',
     if (adoption.distanceLabel != null) adoption.distanceLabel!,
     _sizeLabel(adoption.size),
     adoption.healthStatus,
@@ -2577,7 +2626,7 @@ Future<Uint8List> _buildAdoptionShareCard(AdoptionModel adoption) async {
   );
   _drawText(
     canvas,
-    '${adoption.typeLabel} · ${adoption.age} · ${_sizeLabel(adoption.size)}',
+    '${adoption.typeLabel} · ${adoption.sexLabel} · ${adoption.age} · ${_sizeLabel(adoption.size)}',
     const Offset(142, 1010),
     maxWidth: 790,
     fontSize: 32,
