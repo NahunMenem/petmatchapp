@@ -6,6 +6,7 @@ class LostPetModel {
   final String? petId;
   final String name;
   final String type;
+  final String? sex;
   final String description;
   final String location;
   final String phone;
@@ -26,6 +27,7 @@ class LostPetModel {
     this.petId,
     required this.name,
     required this.type,
+    this.sex,
     required this.description,
     required this.location,
     required this.phone,
@@ -40,6 +42,12 @@ class LostPetModel {
   });
 
   String get typeLabel => type == 'cat' ? 'Gato' : 'Perro';
+  String get sexLabel {
+    if (sex == 'male') return 'Macho';
+    if (sex == 'female') return 'Hembra';
+    return 'Sexo no indicado';
+  }
+
   String get breed => typeLabel;
   String? get photoUrl => photos.isNotEmpty ? photos.first : null;
   bool get isUrgent => alertRadiusKm != null || rewardAmount != null;
@@ -66,6 +74,7 @@ class LostPetModel {
       petId: json['pet_id'] as String?,
       name: json['name'] as String,
       type: json['type'] as String? ?? 'dog',
+      sex: json['sex'] as String?,
       description: json['description'] as String? ?? '',
       location: json['location'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
