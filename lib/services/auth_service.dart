@@ -1,4 +1,5 @@
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../core/constants/api_constants.dart';
 import '../models/referral_model.dart';
 import '../models/user_model.dart';
@@ -31,6 +32,7 @@ class AuthService {
     required String name,
     required String email,
     required String password,
+    required bool termsAccepted,
     String? referralCode,
   }) async {
     final response = await _api.post(
@@ -39,6 +41,7 @@ class AuthService {
         'name': name,
         'email': email,
         'password': password,
+        'terms_accepted': termsAccepted,
         if (referralCode != null && referralCode.trim().isNotEmpty)
           'referral_code': referralCode.trim(),
       },
@@ -46,7 +49,10 @@ class AuthService {
     return _handleAuthResponse(response.data);
   }
 
-  Future<UserModel?> signInWithGoogle({String? referralCode}) async {
+  Future<UserModel?> signInWithGoogle({
+    String? referralCode,
+    bool termsAccepted = false,
+  }) async {
     final googleUser = await _googleSignIn.signIn();
     if (googleUser == null) return null;
 
@@ -63,6 +69,43 @@ class AuthService {
           'access_token': googleAuth.accessToken,
         if (referralCode != null && referralCode.trim().isNotEmpty)
           'referral_code': referralCode.trim(),
+        'terms_accepted': termsAccepted,
+      },
+    );
+    return _handleAuthResponse(response.data);
+  }
+
+  Future<UserModel?> signInWithApple({
+    String? referralCode,
+    bool termsAccepted = false,
+  }) async {
+    final credential = await SignInWithApple.getAppleIDCredential(
+      scopes: [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+    );
+
+    if (credential.identityToken == null) {
+      throw Exception('Apple no devolvio credenciales');
+    }
+
+    final name = [
+      credential.givenName,
+      credential.familyName,
+    ].where((part) => part != null && part.trim().isNotEmpty).join(' ');
+
+    final response = await _api.post(
+      ApiConstants.appleAuth,
+      data: {
+        'identity_token': credential.identityToken,
+        if (credential.authorizationCode.isNotEmpty)
+          'authorization_code': credential.authorizationCode,
+        if (credential.email != null) 'email': credential.email,
+        if (name.trim().isNotEmpty) 'name': name.trim(),
+        if (referralCode != null && referralCode.trim().isNotEmpty)
+          'referral_code': referralCode.trim(),
+        'terms_accepted': termsAccepted,
       },
     );
     return _handleAuthResponse(response.data);
@@ -97,6 +140,11 @@ class AuthService {
   Future<void> logout() async {
     await _googleSignIn.signOut();
     await StorageService.clearAll();
+  }
+
+  Future<void> deleteAccount() async {
+    await _api.delete(ApiConstants.deleteAccount);
+    await logout();
   }
 
   Future<bool> isLoggedIn() async {

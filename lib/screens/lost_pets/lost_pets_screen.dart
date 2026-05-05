@@ -288,21 +288,10 @@ class _MapPlaceholderState extends State<_MapPlaceholder> {
 
   static const _petmatchMapStyle = '''
 [
-  {"elementType":"geometry","stylers":[{"color":"#FFF0E6"}]},
-  {"elementType":"labels.icon","stylers":[{"visibility":"off"}]},
-  {"elementType":"labels.text.fill","stylers":[{"color":"#6C3B21"}]},
-  {"elementType":"labels.text.stroke","stylers":[{"color":"#FFF3EA"}]},
-  {"featureType":"administrative","elementType":"geometry.stroke","stylers":[{"color":"#FFB28F"}]},
-  {"featureType":"landscape","elementType":"geometry","stylers":[{"color":"#FFE6D8"}]},
-  {"featureType":"poi","elementType":"geometry","stylers":[{"color":"#FFD5C0"}]},
-  {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#FFD1B6"}]},
-  {"featureType":"road","elementType":"geometry","stylers":[{"color":"#FFB092"}]},
-  {"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#FF7A33"}]},
-  {"featureType":"road.arterial","elementType":"geometry","stylers":[{"color":"#FF8A3D"}]},
-  {"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#FF5A1F"}]},
-  {"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#9C210B"}]},
-  {"featureType":"transit","elementType":"geometry","stylers":[{"color":"#FF9E68"}]},
-  {"featureType":"water","elementType":"geometry","stylers":[{"color":"#FFD8C6"}]}
+  {"featureType":"poi","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
+  {"featureType":"transit","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
+  {"featureType":"road","elementType":"geometry","stylers":[{"saturation":-10},{"lightness":10}]},
+  {"featureType":"water","elementType":"geometry","stylers":[{"color":"#D7EEF8"}]}
 ]
 ''';
 
@@ -767,6 +756,27 @@ class _LostPetCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
 
+                  Row(
+                    children: [
+                      const Icon(Icons.pets_outlined,
+                          size: 13, color: AppColors.textSecondary),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          '${pet.typeLabel} - ${pet.sexLabel}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+
                   Text(
                     pet.description,
                     style: const TextStyle(
@@ -910,6 +920,7 @@ class _LostPetCard extends StatelessWidget {
   String _lostPetShareText(LostPetModel pet) {
     final details = [
       pet.typeLabel,
+      pet.sexLabel,
       pet.location,
       pet.timeAgo,
       if (pet.rewardAmount != null) 'Recompensa \$${pet.rewardAmount}',
@@ -1219,6 +1230,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
   List<PlaceSuggestion> _locationSuggestions = const [];
   final List<File> _photos = [];
   String _type = 'dog';
+  String _sex = 'female';
   String? _selectedPetId;
   List<String> _selectedPetPhotos = const [];
   _PhoneCountry _phoneCountry = _phoneCountries.first;
@@ -1258,6 +1270,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
     _locationCtrl.text = existingPet.location;
     _rewardCtrl.text = existingPet.rewardAmount?.toString() ?? '';
     _type = existingPet.type;
+    _sex = existingPet.sex ?? 'female';
     _selectedPetId = existingPet.petId;
     _selectedPetPhotos = List<String>.from(existingPet.photos);
     _hasReward = existingPet.rewardAmount != null;
@@ -1461,6 +1474,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
               petId: _selectedPetId,
               name: name,
               type: _type,
+              sex: _sex,
               description: description,
               phone: phone,
               photos: photoUrls,
@@ -1476,6 +1490,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
               petId: _selectedPetId,
               name: name,
               type: _type,
+              sex: _sex,
               description: description,
               phone: phone,
               photos: photoUrls,
@@ -1603,6 +1618,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                                     _selectedPetPhotos = pet.photos;
                                     _nameCtrl.text = pet.name;
                                     _type = pet.type.name;
+                                    _sex = pet.sex.name;
                                     _descCtrl.text = [
                                       pet.description,
                                       pet.breed,
@@ -1658,6 +1674,30 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                   selected: _type == 'cat',
                   onTap: () => setState(() {
                     _type = 'cat';
+                    _selectedPetId = null;
+                    _selectedPetPhotos = const [];
+                  }),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                _TypeBtn(
+                  label: 'Macho',
+                  selected: _sex == 'male',
+                  onTap: () => setState(() {
+                    _sex = 'male';
+                    _selectedPetId = null;
+                    _selectedPetPhotos = const [];
+                  }),
+                ),
+                const SizedBox(width: 10),
+                _TypeBtn(
+                  label: 'Hembra',
+                  selected: _sex == 'female',
+                  onTap: () => setState(() {
+                    _sex = 'female';
                     _selectedPetId = null;
                     _selectedPetPhotos = const [];
                   }),
@@ -2668,7 +2708,7 @@ Future<Uint8List> _buildLostPetShareCard(LostPetModel pet) async {
   );
   _drawLostText(
     canvas,
-    '${pet.typeLabel} - ${pet.timeAgo}',
+    '${pet.typeLabel} - ${pet.sexLabel} - ${pet.timeAgo}',
     const Offset(142, 1010),
     maxWidth: 790,
     fontSize: 32,

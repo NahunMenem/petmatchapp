@@ -534,10 +534,8 @@ class _PackCard extends StatelessWidget {
                   style: FilledButton.styleFrom(
                     backgroundColor: buttonBackground,
                     foregroundColor: buttonForeground,
-                    disabledBackgroundColor:
-                        buttonBackground.withOpacity(0.7),
-                    disabledForegroundColor:
-                        buttonForeground.withOpacity(0.7),
+                    disabledBackgroundColor: buttonBackground.withOpacity(0.7),
+                    disabledForegroundColor: buttonForeground.withOpacity(0.7),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),

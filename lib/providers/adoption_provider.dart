@@ -9,24 +9,29 @@ class AdoptionFilters {
   final String? type; // 'dog' | 'cat' | null = all
   final int maxDistanceKm;
   final String? size;
+  final String? sex;
 
   const AdoptionFilters({
     this.type,
     this.maxDistanceKm = 15,
     this.size,
+    this.sex,
   });
 
   AdoptionFilters copyWith({
     String? type,
     int? maxDistanceKm,
     String? size,
+    String? sex,
     bool clearType = false,
     bool clearSize = false,
+    bool clearSex = false,
   }) {
     return AdoptionFilters(
       type: clearType ? null : (type ?? this.type),
       maxDistanceKm: maxDistanceKm ?? this.maxDistanceKm,
       size: clearSize ? null : (size ?? this.size),
+      sex: clearSex ? null : (sex ?? this.sex),
     );
   }
 }
@@ -55,6 +60,7 @@ final adoptionsProvider = FutureProvider<List<AdoptionModel>>((ref) async {
     type: filters.type,
     maxDistanceKm: filters.maxDistanceKm,
     size: filters.size,
+    sex: filters.sex,
     latitude: location?.latitude,
     longitude: location?.longitude,
   );
