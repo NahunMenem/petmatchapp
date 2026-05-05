@@ -25,6 +25,7 @@ class PetService {
 
   Future<List<PetModel>> getExplorePets({
     String? type,
+    String? sex,
     String? breed,
     bool vaccinatedOnly = false,
     bool sterilizedOnly = false,
@@ -37,6 +38,7 @@ class PetService {
       ApiConstants.explore,
       queryParams: {
         if (type != null) 'type': type,
+        if (sex != null) 'sex': sex,
         if (breed != null && breed.trim().isNotEmpty) 'breed': breed.trim(),
         if (vaccinatedOnly) 'vaccinated': true,
         if (sterilizedOnly) 'sterilized': true,

@@ -607,6 +607,7 @@ class _PremiumFilterSheet extends ConsumerWidget {
   const _PremiumFilterSheet();
 
   static const _features = [
+    (Icons.wc_rounded, 'Sexo', 'Macho o hembra'),
     (Icons.pets_outlined, 'Tipo de mascota', 'Perros, gatos y más'),
     (Icons.biotech_outlined, 'Raza específica', 'Golden, Labrador, Siamés...'),
     (Icons.cake_outlined, 'Rango de edad', 'Cachorro, adulto, mayor'),
@@ -860,12 +861,14 @@ class _AdvancedFiltersSheet extends ConsumerStatefulWidget {
 
 class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
   String? _selectedType;
+  String? _selectedSex;
   String _selectedBreed = '';
 
   @override
   void initState() {
     super.initState();
     _selectedType = ref.read(exploreTypeProvider);
+    _selectedSex = ref.read(exploreSexProvider);
     _selectedBreed = ref.read(exploreBreedProvider);
   }
 
@@ -929,6 +932,31 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
                   _selectedBreed = '';
                 }
               });
+            },
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String?>(
+            value: _selectedSex,
+            decoration: const InputDecoration(
+              labelText: 'Sexo',
+              prefixIcon: Icon(Icons.wc_rounded),
+            ),
+            items: const [
+              DropdownMenuItem<String?>(
+                value: null,
+                child: Text('Todos'),
+              ),
+              DropdownMenuItem<String?>(
+                value: 'male',
+                child: Text('Macho'),
+              ),
+              DropdownMenuItem<String?>(
+                value: 'female',
+                child: Text('Hembra'),
+              ),
+            ],
+            onChanged: (value) {
+              setState(() => _selectedSex = value);
             },
           ),
           const SizedBox(height: 16),
@@ -1000,6 +1028,7 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
             child: ElevatedButton(
               onPressed: () {
                 ref.read(exploreTypeProvider.notifier).state = _selectedType;
+                ref.read(exploreSexProvider.notifier).state = _selectedSex;
                 ref.read(exploreBreedProvider.notifier).state = _selectedBreed;
                 ref.invalidate(exploreProvider);
                 Navigator.pop(context);
@@ -1011,9 +1040,11 @@ class _AdvancedFiltersSheetState extends ConsumerState<_AdvancedFiltersSheet> {
             onPressed: () {
               setState(() {
                 _selectedType = null;
+                _selectedSex = null;
                 _selectedBreed = '';
               });
               ref.read(exploreTypeProvider.notifier).state = null;
+              ref.read(exploreSexProvider.notifier).state = null;
               ref.read(exploreBreedProvider.notifier).state = '';
               ref.read(exploreMaxDistanceProvider.notifier).state = 10;
               ref.read(exploreVaccinatedOnlyProvider.notifier).state = false;

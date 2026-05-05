@@ -288,21 +288,10 @@ class _MapPlaceholderState extends State<_MapPlaceholder> {
 
   static const _petmatchMapStyle = '''
 [
-  {"elementType":"geometry","stylers":[{"color":"#FFF0E6"}]},
-  {"elementType":"labels.icon","stylers":[{"visibility":"off"}]},
-  {"elementType":"labels.text.fill","stylers":[{"color":"#6C3B21"}]},
-  {"elementType":"labels.text.stroke","stylers":[{"color":"#FFF3EA"}]},
-  {"featureType":"administrative","elementType":"geometry.stroke","stylers":[{"color":"#FFB28F"}]},
-  {"featureType":"landscape","elementType":"geometry","stylers":[{"color":"#FFE6D8"}]},
-  {"featureType":"poi","elementType":"geometry","stylers":[{"color":"#FFD5C0"}]},
-  {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#FFD1B6"}]},
-  {"featureType":"road","elementType":"geometry","stylers":[{"color":"#FFB092"}]},
-  {"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#FF7A33"}]},
-  {"featureType":"road.arterial","elementType":"geometry","stylers":[{"color":"#FF8A3D"}]},
-  {"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#FF5A1F"}]},
-  {"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#9C210B"}]},
-  {"featureType":"transit","elementType":"geometry","stylers":[{"color":"#FF9E68"}]},
-  {"featureType":"water","elementType":"geometry","stylers":[{"color":"#FFD8C6"}]}
+  {"featureType":"poi","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
+  {"featureType":"transit","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
+  {"featureType":"road","elementType":"geometry","stylers":[{"saturation":-10},{"lightness":10}]},
+  {"featureType":"water","elementType":"geometry","stylers":[{"color":"#D7EEF8"}]}
 ]
 ''';
 

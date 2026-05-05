@@ -679,22 +679,23 @@ class _AdoptionSwipeCard extends ConsumerWidget {
                               letterSpacing: 0,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${adoption.typeLabel} · ${adoption.sexLabel} · ${adoption.age} · ${_sizeLabel(adoption.size)}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.88),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
                           const SizedBox(height: 10),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
                             children: [
+                              _SwipePill(
+                                icon: Icons.wc_rounded,
+                                label: adoption.sexLabel,
+                              ),
+                              _SwipePill(
+                                icon: Icons.cake_outlined,
+                                label: adoption.age,
+                              ),
+                              _SwipePill(
+                                icon: Icons.straighten_outlined,
+                                label: _sizeLabel(adoption.size),
+                              ),
                               _SwipePill(
                                 icon: Icons.location_on_outlined,
                                 label:
@@ -1164,17 +1165,6 @@ class _AdoptionCard extends ConsumerWidget {
                                   letterSpacing: 0,
                                 ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${adoption.typeLabel} · ${adoption.sexLabel} · ${adoption.age}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
                         ],
                       ),
                     ),
@@ -1199,6 +1189,14 @@ class _AdoptionCard extends ConsumerWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
+                    _InfoPill(
+                      icon: Icons.wc_rounded,
+                      label: adoption.sexLabel,
+                    ),
+                    _InfoPill(
+                      icon: Icons.cake_outlined,
+                      label: adoption.age,
+                    ),
                     _InfoPill(
                       icon: Icons.location_on_outlined,
                       label:
