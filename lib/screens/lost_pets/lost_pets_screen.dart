@@ -1261,6 +1261,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
   bool _loadingLocation = false;
   bool _loadingSuggestions = false;
   bool _publishing = false;
+  bool _wantsToRenotify = false;
   _AlertReach? _selectedReach;
   double? _latitude;
   double? _longitude;
@@ -1509,6 +1510,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
               rewardAmount: rewardAmount,
               alertRadiusKm:
                   widget.existingPet?.alertRadiusKm ?? selectedReach?.radiusKm,
+              renotify: _wantsToRenotify,
             );
       } else {
         await ref.read(lostPetsServiceProvider).createLostPet(
@@ -1538,7 +1540,9 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
         context,
         title: _isEditing ? 'Alerta actualizada' : 'Alerta publicada',
         message: _isEditing
-            ? 'Alerta actualizada.'
+            ? (_wantsToRenotify
+                ? 'Alerta actualizada y notificacion enviada.'
+                : 'Alerta actualizada.')
             : selectedReach == null
                 ? 'Alerta publicada.'
                 : 'Alerta publicada y ${selectedReach.title.toLowerCase()} activada.',
@@ -1575,6 +1579,124 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
       }
     }
     return 'No se pudo publicar la alerta. Reintenta.';
+  }
+
+  Widget _buildRenotifyBlock(LostPetModel pet) {
+    final nextAt = pet.nextNotificationAt;
+    final isLocked = nextAt != null && nextAt.isAfter(DateTime.now());
+
+    String lockLabel = '';
+    if (isLocked) {
+      final diff = nextAt.difference(DateTime.now());
+      final h = diff.inHours;
+      final m = diff.inMinutes % 60;
+      lockLabel = h > 0 ? 'en ${h}h${m > 0 ? ' ${m}m' : ''}' : 'en ${m}m';
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7F2),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.primary.withOpacity(0.16)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.campaign_outlined,
+                  color: AppColors.primary, size: 20),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Notificaciones',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '${pet.alertRadiusKm} km',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Radio activo: ${pet.alertRadiusKm} km. Podes notificar a usuarios cercanos una vez por dia.',
+            style: const TextStyle(
+                color: AppColors.textSecondary, fontSize: 12, height: 1.3),
+          ),
+          const SizedBox(height: 12),
+          if (isLocked)
+            Row(
+              children: [
+                const Icon(Icons.lock_clock_outlined,
+                    size: 16, color: AppColors.textSecondary),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Ya notificaste hoy. Proxima notificacion disponible $lockLabel.',
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Notificar de nuevo (gratis)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const Text(
+                        'Avisa de nuevo a usuarios cercanos al guardar.',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: _wantsToRenotify,
+                  onChanged: (v) => setState(() => _wantsToRenotify = v),
+                  activeColor: AppColors.primary,
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
   }
 
   Future<void> _openInGoogleMaps() async {
@@ -1961,21 +2083,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
             ],
             const SizedBox(height: 16),
             if (_isEditing && widget.existingPet?.alertRadiusKm != null)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  'Alcance de alerta actual: ${widget.existingPet!.alertRadiusKm} km',
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              )
+              _buildRenotifyBlock(widget.existingPet!)
             else
               _AlertReachSection(
                 availablePatitas: availablePatitas,

@@ -16,6 +16,7 @@ class LostPetModel {
   final double? longitude;
   final int? rewardAmount;
   final int? alertRadiusKm;
+  final DateTime? lastNotifiedAt;
   final String status;
   final DateTime reportedAt;
 
@@ -37,9 +38,18 @@ class LostPetModel {
     this.longitude,
     this.rewardAmount,
     this.alertRadiusKm,
+    this.lastNotifiedAt,
     required this.status,
     required this.reportedAt,
   });
+
+  DateTime? get nextNotificationAt =>
+      lastNotifiedAt?.add(const Duration(hours: 24));
+
+  bool get canNotifyAgain {
+    final next = nextNotificationAt;
+    return next == null || next.isBefore(DateTime.now());
+  }
 
   String get typeLabel => type == 'cat' ? 'Gato' : 'Perro';
   String get sexLabel {
@@ -84,6 +94,9 @@ class LostPetModel {
       longitude: (json['longitude'] as num?)?.toDouble(),
       rewardAmount: (json['reward_amount'] as num?)?.toInt(),
       alertRadiusKm: (json['alert_radius_km'] as num?)?.toInt(),
+      lastNotifiedAt: json['last_notified_at'] != null
+          ? DateTime.tryParse(json['last_notified_at'] as String)
+          : null,
       status: json['status'] as String? ?? 'active',
       reportedAt: DateTime.tryParse(json['reported_at'] as String? ?? '') ??
           DateTime.now(),
