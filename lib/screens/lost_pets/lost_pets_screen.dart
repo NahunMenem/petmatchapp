@@ -1476,6 +1476,26 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
       return;
     }
 
+    if (_isEditing && _wantsToRenotify) {
+      final existingKm = widget.existingPet?.alertRadiusKm;
+      final reach = existingKm == _alertReach2km.radiusKm
+          ? _alertReach2km
+          : existingKm == _alertReach5km.radiusKm
+              ? _alertReach5km
+              : existingKm == _alertReach10km.radiusKm
+                  ? _alertReach10km
+                  : null;
+      if (reach != null && (wallet?.patitas ?? 0) < reach.cost) {
+        showPatitasInsufficientDialog(
+          context,
+          currentPatitas: wallet?.patitas ?? 0,
+          requiredPatitas: reach.cost,
+          featureName: 'volver a notificar a ${reach.radiusKm} km',
+        );
+        return;
+      }
+    }
+
     setState(() => _publishing = true);
     try {
       final rewardAmount =
@@ -1530,7 +1550,8 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
       }
 
       ref.invalidate(lostPetsProvider);
-      if (!_isEditing && selectedReach != null) {
+      if ((!_isEditing && selectedReach != null) ||
+          (_isEditing && _wantsToRenotify)) {
         await ref.read(patitasWalletProvider.notifier).refresh();
       }
 
@@ -1581,9 +1602,16 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
     return 'No se pudo publicar la alerta. Reintenta.';
   }
 
-  Widget _buildRenotifyBlock(LostPetModel pet) {
+  Widget _buildRenotifyBlock(LostPetModel pet, int availablePatitas) {
     final nextAt = pet.nextNotificationAt;
     final isLocked = nextAt != null && nextAt.isAfter(DateTime.now());
+
+    final reachCost = pet.alertRadiusKm == _alertReach2km.radiusKm
+        ? _alertReach2km.cost
+        : pet.alertRadiusKm == _alertReach5km.radiusKm
+            ? _alertReach5km.cost
+            : _alertReach10km.cost;
+    final hasEnoughPatitas = availablePatitas >= reachCost;
 
     String lockLabel = '';
     if (isLocked) {
@@ -1662,18 +1690,20 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                 ),
               ],
             )
-          else
+          else ...[
             Row(
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Notificar de nuevo (gratis)',
+                      Text(
+                        'Notificar de nuevo ($reachCost Patitas)',
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: hasEnoughPatitas
+                              ? AppColors.textPrimary
+                              : AppColors.textSecondary,
                         ),
                       ),
                       const Text(
@@ -1688,12 +1718,40 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                   ),
                 ),
                 Switch(
-                  value: _wantsToRenotify,
-                  onChanged: (v) => setState(() => _wantsToRenotify = v),
+                  value: _wantsToRenotify && hasEnoughPatitas,
+                  onChanged: hasEnoughPatitas
+                      ? (v) => setState(() => _wantsToRenotify = v)
+                      : null,
                   activeColor: AppColors.primary,
                 ),
               ],
             ),
+            if (!hasEnoughPatitas) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/paw-points/buy'),
+                  icon: const Icon(Icons.pets_rounded, size: 18),
+                  label: const Text('Recargar Patitas'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: BorderSide(
+                      color: AppColors.primary.withOpacity(0.32),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ],
       ),
     );
@@ -2083,7 +2141,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
             ],
             const SizedBox(height: 16),
             if (_isEditing && widget.existingPet?.alertRadiusKm != null)
-              _buildRenotifyBlock(widget.existingPet!)
+              _buildRenotifyBlock(widget.existingPet!, availablePatitas)
             else
               _AlertReachSection(
                 availablePatitas: availablePatitas,
