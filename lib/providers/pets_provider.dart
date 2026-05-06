@@ -66,11 +66,11 @@ class ExploreNotifier extends AsyncNotifier<List<PetModel>> {
     final effectiveMaxDistanceKm =
         advancedFiltersActive ? maxDistanceKm.clamp(10, 50) : 10;
     final pets = await service.getExplorePets(
-      type: type,
-      sex: sex,
-      breed: breed,
-      vaccinatedOnly: vaccinatedOnly,
-      sterilizedOnly: sterilizedOnly,
+      type: advancedFiltersActive ? type : null,
+      sex: advancedFiltersActive ? sex : null,
+      breed: advancedFiltersActive ? breed : '',
+      vaccinatedOnly: advancedFiltersActive && vaccinatedOnly,
+      sterilizedOnly: advancedFiltersActive && sterilizedOnly,
       lat: location?.latitude,
       lng: location?.longitude,
       maxDistanceKm: effectiveMaxDistanceKm,

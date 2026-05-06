@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -288,10 +289,32 @@ class _MapPlaceholderState extends State<_MapPlaceholder> {
 
   static const _petmatchMapStyle = '''
 [
+  {"elementType":"geometry","stylers":[{"color":"#FFF0E6"}]},
+  {"elementType":"labels.text.fill","stylers":[{"color":"#4D414D"}]},
+  {"elementType":"labels.text.stroke","stylers":[{"color":"#FFF6F0"},{"weight":2}]},
+  {"featureType":"administrative","elementType":"geometry.stroke","stylers":[{"color":"#F3A88E"},{"visibility":"on"}]},
+  {"featureType":"administrative.locality","elementType":"labels.text.fill","stylers":[{"color":"#E5501A"}]},
+  {"featureType":"landscape.man_made","elementType":"geometry","stylers":[{"color":"#FFF4EC"}]},
+  {"featureType":"landscape.natural","elementType":"geometry","stylers":[{"color":"#FFE5D8"}]},
+  {"featureType":"poi","elementType":"geometry","stylers":[{"color":"#FFD8C8"}]},
   {"featureType":"poi","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
+  {"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#775960"}]},
+  {"featureType":"poi.business","stylers":[{"visibility":"off"}]},
+  {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#C8F0DA"}]},
+  {"featureType":"poi.park","elementType":"labels.text.fill","stylers":[{"color":"#278856"}]},
+  {"featureType":"road","elementType":"geometry","stylers":[{"color":"#FFFFFF"}]},
+  {"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#FFBBA0"},{"weight":1}]},
+  {"featureType":"road","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
+  {"featureType":"road","elementType":"labels.text.fill","stylers":[{"color":"#665966"}]},
+  {"featureType":"road.arterial","elementType":"geometry","stylers":[{"color":"#FFCDB8"}]},
+  {"featureType":"road.highway","elementType":"geometry","stylers":[{"color":"#FF9A68"}]},
+  {"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#FF6B35"}]},
+  {"featureType":"road.highway","elementType":"labels.text.fill","stylers":[{"color":"#693018"}]},
+  {"featureType":"road.local","elementType":"geometry","stylers":[{"color":"#FFFFFF"}]},
+  {"featureType":"transit","elementType":"geometry","stylers":[{"color":"#F7C6BC"}]},
   {"featureType":"transit","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
-  {"featureType":"road","elementType":"geometry","stylers":[{"saturation":-10},{"lightness":10}]},
-  {"featureType":"water","elementType":"geometry","stylers":[{"color":"#D7EEF8"}]}
+  {"featureType":"water","elementType":"geometry","stylers":[{"color":"#AEE9FB"}]},
+  {"featureType":"water","elementType":"labels.text.fill","stylers":[{"color":"#147FA9"}]}
 ]
 ''';
 
@@ -1440,7 +1463,9 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
 
     final selectedReach = _selectedReach;
     final wallet = ref.read(patitasWalletProvider).valueOrNull;
-    if (selectedReach != null && (wallet?.patitas ?? 0) < selectedReach.cost) {
+    if (!_isEditing &&
+        selectedReach != null &&
+        (wallet?.patitas ?? 0) < selectedReach.cost) {
       showPatitasInsufficientDialog(
         context,
         currentPatitas: wallet?.patitas ?? 0,
@@ -1518,12 +1543,38 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                 ? 'Alerta publicada.'
                 : 'Alerta publicada y ${selectedReach.title.toLowerCase()} activada.',
       );
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
-      _showLocationSnack('No se pudo publicar la alerta. Reintenta.');
+      _showLocationSnack(_publishErrorMessage(error));
     } finally {
       if (mounted) setState(() => _publishing = false);
     }
+  }
+
+  String _publishErrorMessage(Object error) {
+    if (error is DioException) {
+      final data = error.response?.data;
+      final detail = data is Map ? data['detail'] : null;
+      if (detail is String && detail.isNotEmpty) return detail;
+      if (detail is List && detail.isNotEmpty) {
+        return 'Revisa los datos de la alerta';
+      }
+      if (error.response?.statusCode == 402) {
+        return 'Saldo de Patitas insuficiente';
+      }
+      if (error.response?.statusCode == 413) {
+        return 'La imagen es demasiado grande';
+      }
+      if (error.response?.statusCode == 500 ||
+          error.response?.statusCode == 503) {
+        return 'No se pudo guardar la alerta en el servidor';
+      }
+      if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout) {
+        return 'La conexion tardo demasiado';
+      }
+    }
+    return 'No se pudo publicar la alerta. Reintenta.';
   }
 
   Future<void> _openInGoogleMaps() async {
