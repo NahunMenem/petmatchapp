@@ -85,14 +85,14 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final service = ref.read(authServiceProvider);
-      final user = await service.register(
+      await service.register(
         name: name,
         email: email,
         password: password,
         termsAccepted: termsAccepted,
         referralCode: null,
       );
-      return AuthState(status: AuthStatus.authenticated, user: user);
+      return const AuthState(status: AuthStatus.unauthenticated);
     });
   }
 
@@ -106,14 +106,14 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final service = ref.read(authServiceProvider);
-      final user = await service.register(
+      await service.register(
         name: name,
         email: email,
         password: password,
         termsAccepted: termsAccepted,
         referralCode: referralCode,
       );
-      return AuthState(status: AuthStatus.authenticated, user: user);
+      return const AuthState(status: AuthStatus.unauthenticated);
     });
   }
 

@@ -71,6 +71,7 @@ class LostPetsService {
     double? longitude,
     int? rewardAmount,
     int? alertRadiusKm,
+    bool renotify = false,
   }) async {
     final response = await _api.put(
       '${ApiConstants.lostPets}/$lostPetId',
@@ -87,6 +88,7 @@ class LostPetsService {
         'longitude': longitude,
         'reward_amount': rewardAmount,
         'alert_radius_km': alertRadiusKm,
+        'renotify': renotify,
       },
     );
     return LostPetModel.fromJson(response.data as Map<String, dynamic>);

@@ -12,6 +12,7 @@ import 'core/theme/app_colors.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/onboarding/create_pet_screen.dart';
+import 'screens/splash/premium_splash_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/chat/chat_detail_screen.dart';
 import 'screens/adoption/publish_adoption_screen.dart';
@@ -117,11 +118,18 @@ final _routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-class PawMatchApp extends ConsumerWidget {
+class PawMatchApp extends ConsumerStatefulWidget {
   const PawMatchApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PawMatchApp> createState() => _PawMatchAppState();
+}
+
+class _PawMatchAppState extends ConsumerState<PawMatchApp> {
+  bool _showSplash = true;
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(_routerProvider);
     final appVersion = ref.watch(appVersionProvider).valueOrNull;
     ref.listen(authProvider, (previous, next) {
@@ -146,7 +154,30 @@ class PawMatchApp extends ConsumerWidget {
         if (appVersion?.updateRequired == true) {
           return ForceUpdateScreen(status: appVersion!);
         }
-        return child ?? const SizedBox.shrink();
+        return Stack(
+          children: [
+            child ?? const SizedBox.shrink(),
+            Positioned.fill(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 520),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInOutCubic,
+                child: _showSplash
+                    ? PremiumSplashScreen(
+                        key: const ValueKey('premium-splash'),
+                        onFinished: () {
+                          if (mounted) {
+                            setState(() => _showSplash = false);
+                          }
+                        },
+                      )
+                    : const SizedBox.shrink(
+                        key: ValueKey('premium-splash-hidden'),
+                      ),
+              ),
+            ),
+          ],
+        );
       },
     );
   }

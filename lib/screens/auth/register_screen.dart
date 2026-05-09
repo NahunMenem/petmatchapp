@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,8 +27,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _confirmPassCtrl = TextEditingController();
   final _referralCtrl = TextEditingController();
   bool _obscurePass = true;
+  bool _obscureConfirmPass = true;
   bool _loading = false;
   bool _termsAccepted = false;
 
@@ -36,6 +39,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
+    _confirmPassCtrl.dispose();
     _referralCtrl.dispose();
     super.dispose();
   }
@@ -53,7 +57,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               : _referralCtrl.text.trim(),
           termsAccepted: _termsAccepted,
         );
+    final registerState = ref.read(authProvider);
     if (mounted) setState(() => _loading = false);
+    if (mounted && !registerState.hasError) {
+      await _showEmailVerificationDialog(_emailCtrl.text.trim());
+    }
   }
 
   bool _ensureTermsAccepted() {
@@ -74,6 +82,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
+  Future<void> _showEmailVerificationDialog(String email) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _EmailVerificationDialog(
+        email: email,
+        onConfirm: () {
+          Navigator.pop(ctx);
+          if (mounted) context.go('/login');
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen(authProvider, (_, next) {
@@ -85,20 +107,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         },
         error: (e, _) {
           if (mounted) setState(() => _loading = false);
-          final errorText = e.toString();
-          final msg = errorText.contains('Codigo de referido invalido')
-              ? 'El codigo de referido no es valido.'
-              : errorText.contains('terminos')
-                  ? 'Tenes que aceptar los terminos'
-                  : errorText.contains('400')
-                      ? 'Ya existe una cuenta con ese email'
-                      : errorText.contains('SocketException') ||
-                              errorText.contains('Connection')
-                          ? 'Sin conexion al servidor'
-                          : 'Error al crear la cuenta';
           AppSnackBar.error(
             context,
-            message: msg,
+            message: _authErrorMessage(e),
           );
         },
         loading: () {},
@@ -161,10 +172,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 TextFormField(
                   controller: _passCtrl,
                   obscureText: _obscurePass,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _register(),
+                  textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
-                    hintText: 'Contrasena',
+                    hintText: 'Contraseña',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -177,6 +187,35 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                   ),
                   validator: Validators.password,
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _confirmPassCtrl,
+                  obscureText: _obscureConfirmPass,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _register(),
+                  decoration: InputDecoration(
+                    hintText: 'Repetir contraseña',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPass
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
+                      onPressed: () => setState(
+                          () => _obscureConfirmPass = !_obscureConfirmPass),
+                    ),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) {
+                      return 'Repetí tu contraseña';
+                    }
+                    if (v != _passCtrl.text) {
+                      return 'Las contraseñas no coinciden';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 14),
                 TextFormField(
@@ -258,6 +297,136 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+String _authErrorMessage(Object error) {
+  if (error is DioException) {
+    final data = error.response?.data;
+    final detail = data is Map ? data['detail'] : null;
+
+    if (detail is String && detail.isNotEmpty) {
+      if (detail.contains('Codigo de referido invalido')) {
+        return 'El codigo de referido no es valido.';
+      }
+      if (detail.contains('terminos')) {
+        return 'Tenes que aceptar los terminos.';
+      }
+      if (detail.contains('Ya existe una cuenta')) {
+        return 'Ya existe una cuenta con ese email.';
+      }
+      return detail;
+    }
+
+    if (detail is List && detail.isNotEmpty) {
+      return 'Revisa los datos ingresados.';
+    }
+
+    if (error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.connectionError) {
+      return 'Sin conexion al servidor.';
+    }
+  }
+
+  final errorText = error.toString();
+  if (errorText.contains('SocketException') ||
+      errorText.contains('Connection')) {
+    return 'Sin conexion al servidor.';
+  }
+  return 'Error al crear la cuenta.';
+}
+
+class _EmailVerificationDialog extends StatelessWidget {
+  final String email;
+  final VoidCallback onConfirm;
+
+  const _EmailVerificationDialog({
+    required this.email,
+    required this.onConfirm,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      backgroundColor: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.10),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.mark_email_unread_outlined,
+                size: 34,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              '¡Ya casi terminás!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+                children: [
+                  const TextSpan(text: 'Te enviamos un correo a\n'),
+                  TextSpan(
+                    text: email,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const TextSpan(
+                    text:
+                        '\n\nHacé clic en el enlace para verificar tu cuenta. Revisá también la carpeta de spam.',
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 26),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: onConfirm,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text(
+                  'Entendido',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
