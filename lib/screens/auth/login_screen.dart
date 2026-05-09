@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -117,7 +118,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         !_loadingApple;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF2EA),
+      backgroundColor: const Color(0xFF17111F),
       body: SafeArea(
         child: checkingSession
             ? const _Splash()
@@ -125,12 +126,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Color(0xFFFFF2EA),
-                      Color(0xFFFFE2D1),
-                      Color(0xFFFFF8F4),
+                      Color(0xFF17111F),
+                      Color(0xFF331538),
+                      Color(0xFFFF5F7E),
+                      Color(0xFFFF8A3D),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
+                    stops: [0.0, 0.42, 0.78, 1.0],
                   ),
                 ),
                 child: Stack(
@@ -147,16 +150,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               padding:
                                   const EdgeInsets.fromLTRB(22, 24, 22, 20),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.88),
+                                color: Colors.white.withValues(alpha: 0.92),
                                 borderRadius: BorderRadius.circular(34),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: Colors.white.withValues(alpha: 0.82),
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.primary.withOpacity(0.16),
-                                    blurRadius: 34,
-                                    offset: const Offset(0, 20),
+                                    color:
+                                        Colors.black.withValues(alpha: 0.24),
+                                    blurRadius: 42,
+                                    offset: const Offset(0, 24),
+                                  ),
+                                  BoxShadow(
+                                    color: AppColors.secondary
+                                        .withValues(alpha: 0.18),
+                                    blurRadius: 60,
+                                    offset: const Offset(0, 14),
                                   ),
                                 ],
                               ),
@@ -167,16 +177,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     child: BrandLogo(width: 245, height: 98),
                                   ),
                                   const SizedBox(height: 12),
-                                  const Text(
-                                    'Entrá a PawMatch',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 24,
-                                      height: 1.12,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
+
                                   const SizedBox(height: 8),
                                   const Text(
                                     'Matches, adopciones y alertas cerca tuyo.',
@@ -290,7 +291,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   String _authErrorMessage(Object error) {
+    if (error is DioException) {
+      final data = error.response?.data;
+      final detail = data is Map ? data['detail'] : null;
+      if (detail is String && detail.isNotEmpty) {
+        if (detail.contains('verificar')) {
+          return 'Tenes que verificar tu correo antes de ingresar.';
+        }
+        return detail;
+      }
+    }
     final text = error.toString();
+    if (text.contains('403')) {
+      return 'Tenes que verificar tu correo antes de ingresar.';
+    }
     if (text.contains('401')) return 'Email o contraseña incorrectos';
     if (text.contains('SocketException') || text.contains('Connection')) {
       return 'Sin conexión al servidor';
@@ -375,42 +389,124 @@ class _LoginColorWash extends StatelessWidget {
     return Stack(
       children: [
         Positioned(
-          top: -70,
-          right: -80,
+          left: -70,
+          right: -70,
+          top: 50,
+          child: Transform.rotate(
+            angle: -0.18,
+            child: Container(
+              height: 116,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.0),
+                    Colors.white.withValues(alpha: 0.16),
+                    AppColors.primary.withValues(alpha: 0.24),
+                    Colors.white.withValues(alpha: 0.0),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+          ),
+        ),
+        const Positioned(
+          right: 22,
+          top: 56,
+          child: _FloatingPaw(
+            size: 28,
+            angle: 0.22,
+            opacity: 0.30,
+          ),
+        ),
+        const Positioned(
+          left: 24,
+          top: 156,
+          child: _FloatingPaw(
+            size: 20,
+            angle: -0.26,
+            opacity: 0.22,
+          ),
+        ),
+        const Positioned(
+          right: 36,
+          bottom: 108,
+          child: _FloatingPaw(
+            size: 34,
+            angle: -0.18,
+            opacity: 0.24,
+          ),
+        ),
+        const Positioned(
+          left: 34,
+          bottom: 46,
+          child: _FloatingPaw(
+            size: 24,
+            angle: 0.34,
+            opacity: 0.18,
+          ),
+        ),
+        Positioned(
+          top: -95,
+          right: -110,
           child: Container(
-            width: 260,
-            height: 260,
+            width: 310,
+            height: 310,
             decoration: BoxDecoration(
-              color: AppColors.secondary.withOpacity(0.20),
+              gradient: RadialGradient(
+                colors: [
+                  Colors.white.withValues(alpha: 0.22),
+                  AppColors.secondary.withValues(alpha: 0.18),
+                  Colors.transparent,
+                ],
+              ),
               shape: BoxShape.circle,
             ),
           ),
         ),
         Positioned(
-          left: -90,
-          bottom: 80,
+          left: -120,
+          bottom: 36,
           child: Container(
-            width: 300,
-            height: 300,
+            width: 360,
+            height: 360,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.18),
+              gradient: RadialGradient(
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.28),
+                  AppColors.secondary.withValues(alpha: 0.10),
+                  Colors.transparent,
+                ],
+              ),
               shape: BoxShape.circle,
-            ),
-          ),
-        ),
-        Positioned(
-          left: 42,
-          right: 42,
-          top: 88,
-          child: Container(
-            height: 86,
-            decoration: BoxDecoration(
-              gradient: AppColors.matchGradient,
-              borderRadius: BorderRadius.circular(999),
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _FloatingPaw extends StatelessWidget {
+  final double size;
+  final double angle;
+  final double opacity;
+
+  const _FloatingPaw({
+    required this.size,
+    required this.angle,
+    required this.opacity,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: angle,
+      child: Icon(
+        Icons.pets_rounded,
+        color: Colors.white.withValues(alpha: opacity),
+        size: size,
+      ),
     );
   }
 }

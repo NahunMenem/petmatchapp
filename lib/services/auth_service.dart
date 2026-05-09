@@ -28,14 +28,14 @@ class AuthService {
     return _handleAuthResponse(response.data);
   }
 
-  Future<UserModel> register({
+  Future<void> register({
     required String name,
     required String email,
     required String password,
     required bool termsAccepted,
     String? referralCode,
   }) async {
-    final response = await _api.post(
+    await _api.post(
       ApiConstants.register,
       data: {
         'name': name,
@@ -46,7 +46,6 @@ class AuthService {
           'referral_code': referralCode.trim(),
       },
     );
-    return _handleAuthResponse(response.data);
   }
 
   Future<UserModel?> signInWithGoogle({

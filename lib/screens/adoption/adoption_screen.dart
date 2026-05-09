@@ -437,11 +437,11 @@ class _AdoptionsSwipeStackState extends ConsumerState<_AdoptionsSwipeStack> {
 
   Future<void> _contact(AdoptionModel adoption) async {
     final currentUserId = ref.read(authProvider).valueOrNull?.user?.id;
-    if (currentUserId == adoption.publisherId) {
-      AppSnackBar.info(
-        context,
-        message: 'Esta publicacion es tuya.',
-      );
+    final isOwner = currentUserId == adoption.publisherId;
+
+    if (isOwner) {
+      if (adoption.status != AdoptionStatus.available) return;
+      await _confirmMarkAdopted(adoption);
       return;
     }
 
@@ -465,6 +465,112 @@ class _AdoptionsSwipeStackState extends ConsumerState<_AdoptionsSwipeStack> {
       context,
       title: 'Interes enviado',
       message: 'Le avisamos al publicador que queres adoptar.',
+    );
+  }
+
+  Future<void> _confirmMarkAdopted(AdoptionModel adoption) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppColors.success.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle_outline_rounded,
+                  size: 32,
+                  color: AppColors.success,
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                '¿Marcar como adoptado?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '${adoption.name} quedará marcado/a como adoptado/a. Podés revertirlo desde "Mis publicaciones".',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 26),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text(
+                        'Cancelar',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.success,
+                        minimumSize: const Size(0, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text(
+                        'Sí, adoptar',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    await ref.read(adoptionServiceProvider).updateAdoptionStatus(
+      adoption.id,
+      AdoptionStatus.adopted,
+    );
+    if (!mounted) return;
+
+    ref.invalidate(adoptionsProvider);
+    ref.invalidate(myAdoptionsProvider);
+
+    AppSnackBar.success(
+      context,
+      title: '¡Felicitaciones!',
+      message: '${adoption.name} fue marcado/a como adoptado/a.',
     );
   }
 
@@ -601,8 +707,14 @@ class _AdoptionSwipeCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUserId = ref.watch(authProvider).valueOrNull?.user?.id;
     final isOwner = currentUserId == adoption.publisherId;
-    final canContact =
-        !isOwner && adoption.status == AdoptionStatus.available && !disabled;
+    final isAvailable = adoption.status == AdoptionStatus.available;
+    final canContact = isAvailable && !disabled;
+    final contactLabel = isOwner
+        ? (isAvailable ? 'Marcar adoptado' : adoption.statusLabel)
+        : 'Me interesa';
+    final contactIcon = isOwner
+        ? Icons.check_circle_outline_rounded
+        : Icons.volunteer_activism_outlined;
 
     return IgnorePointer(
       ignoring: disabled,
@@ -745,7 +857,8 @@ class _AdoptionSwipeCard extends ConsumerWidget {
                         ),
                         _SwipeInterestButton(
                           enabled: canContact,
-                          label: isOwner ? 'Tuya' : 'Me interesa',
+                          label: contactLabel,
+                          icon: contactIcon,
                           onTap: onContact,
                         ),
                       ],
@@ -859,11 +972,13 @@ class _SwipeIconButton extends StatelessWidget {
 class _SwipeInterestButton extends StatelessWidget {
   final bool enabled;
   final String label;
+  final IconData icon;
   final VoidCallback onTap;
 
   const _SwipeInterestButton({
     required this.enabled,
     required this.label,
+    this.icon = Icons.volunteer_activism_outlined,
     required this.onTap,
   });
 
@@ -876,7 +991,7 @@ class _SwipeInterestButton extends StatelessWidget {
           height: 52,
           child: ElevatedButton.icon(
             onPressed: enabled ? onTap : null,
-            icon: const Icon(Icons.volunteer_activism_outlined, size: 19),
+            icon: Icon(icon, size: 19),
             label: Text(
               label,
               overflow: TextOverflow.ellipsis,
